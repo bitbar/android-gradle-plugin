@@ -18,3 +18,7 @@ android {
     compileSdkVersion 15
     buildToolsVersion "17.0"
 }
+
+testdroid {
+    username "sakari.rautiainen@bitbar.com"
+}

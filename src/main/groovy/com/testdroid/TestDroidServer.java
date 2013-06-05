@@ -20,6 +20,11 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.builder.testing.api.TestServer;
 import com.android.utils.ILogger;
+import com.testdroid.api.DefaultAPIClient;
+import com.testdroid.api.APIClient;
+
+
+
 
 import java.io.File;
 
@@ -46,11 +51,19 @@ public class TestDroidServer extends TestServer {
                 variantName,
                 testApk.getAbsolutePath(),
                 testedApk != null ? testedApk.getAbsolutePath() : "<none>"));
+        APIClient client = new DefaultAPIClient("http://localhost:8080/testdroid-cloud", "admin@localhost", "admin");
     }
 
     @Override
     public boolean isConfigured() {
-        // TODO: detect authentication is actually configured and return false if not.
+        if(extension.getUsername() == null) {
+            System.out.println("username has not been set");
+            return false;
+        }
+        if(extension.getPassword() == null) {
+            System.out.println("password has not been set");
+            return false;
+        }
         return true;
     }
 }

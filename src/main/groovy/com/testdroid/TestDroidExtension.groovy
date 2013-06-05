@@ -17,5 +17,7 @@
 package com.testdroid
 
 class TestDroidExtension {
-    // TODO: figure out the parameters.
+    String username
+    String password
+
 }
