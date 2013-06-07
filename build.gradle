@@ -19,6 +19,7 @@ dependencies {
 
     compile 'com.android.tools.build:builder-test-api:0.4.2'
     compile fileTree(dir: 'libs', includes: ['*.jar'])
+    runtime fileTree(dir: 'libs', includes: ['*.jar'])
     testCompile 'junit:junit:3.8.1'
 }
 

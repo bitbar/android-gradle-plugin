@@ -8,6 +8,7 @@ buildscript {
     dependencies {
         classpath 'com.android.tools.build:gradle:0.4.2'
         classpath 'com.testdroid:gradle:1.0'
+        compile fileTree(dir: 'libs', includes: ['*.jar'])
     }
 }
 
@@ -20,5 +21,6 @@ android {
 }
 
 testdroid {
-    username "sakari.rautiainen@bitbar.com"
+    username "username"
+    password "passwd"
 }

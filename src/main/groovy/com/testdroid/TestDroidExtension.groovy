@@ -19,5 +19,7 @@ package com.testdroid
 class TestDroidExtension {
     String username
     String password
+    String projectName
+    String cloudUrl
 
 }
