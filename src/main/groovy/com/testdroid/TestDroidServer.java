@@ -47,7 +47,7 @@ public class TestDroidServer extends TestServer {
 
     @Override
     public void uploadApks(@NonNull String variantName, @NonNull File testApk, @Nullable File testedApk) {
-        APIUser user = null;
+        APIUser user;
         System.out.println(String.format(
                 "TESTDROID: Variant(%s), Uploading APKs\n\t%s\n\t%s",
                 variantName,
@@ -110,14 +110,17 @@ public class TestDroidServer extends TestServer {
     public boolean isConfigured() {
         if(extension.getUsername() == null) {
             logger.warning("username has not been set");
+            System.out.println("username has not been set");
             return false;
         }
         if(extension.getPassword() == null) {
             logger.warning("password has not been set");
+            System.out.println("password has not been set");
             return false;
         }
         if(extension.getProjectName() == null) {
             logger.warning("project name has not been set, creating a new project");
+            System.out.println("project name has not been set, creating a new project");
         }
         return true;
     }

@@ -1,12 +1,11 @@
 buildscript {
     repositories {
         mavenCentral()
-		mavenRepo urls: "https://oss.sonatype.org/content/groups/public/"
 
     }
     dependencies {
         classpath 'com.android.tools.build:gradle:0.4.2'
-        classpath 'com.testdroid:gradle:1.0'
+        classpath 'com.testdroid:gradle:1.0.1'
     }
 }
 
