@@ -1,7 +1,6 @@
 buildscript {
     repositories {
         mavenCentral()
-		mavenRepo urls: "https://oss.sonatype.org/content/groups/public/"
 
     }
     dependencies {

@@ -26,6 +26,7 @@ dependencies {
 group = 'com.testdroid'
 archivesBaseName = 'gradle'
 version = '1.0'
+sourceCompatibility = 1.5
 
 // custom tasks for creating source/javadoc jars
 task sourcesJar(type: Jar, dependsOn:classes) {
