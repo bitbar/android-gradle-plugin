@@ -5,6 +5,7 @@ apply plugin: 'signing'
 
 repositories {
     mavenCentral()
+
 }
 
 configurations {
@@ -18,7 +19,7 @@ dependencies {
     groovy localGroovy()
 
     compile 'com.android.tools.build:builder-test-api:0.4.2'
-
+    compile 'com.testdroid:testdroid-api:1.2.7'
     testCompile 'junit:junit:3.8.1'
 }
 
@@ -93,12 +94,14 @@ uploadArchives {
                 }
 
                 scm {
-                    url "https://github.com/testdroid/testdroid-gradle-plugin.git"
-                    connection "git://github.com/testdroid/testdroid-gradle-plugin.git"
+                    url "https://github.com/bitbar/testdroid-gradle-plugin.git"
+                    connection "git://github.com/bitbar/testdroid-gradle-plugin.git"
+                    developerConnection 'scm:git@github.com:bitbar/testdroid-gradle-plugin.git'
+
                 }
                 developers {
                     developer {
-                        name 'TestDroid'
+                        name 'Sakari Rautiainen'
                     }
                 }
             }

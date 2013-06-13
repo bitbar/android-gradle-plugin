@@ -1,9 +1,8 @@
 buildscript {
     repositories {
         mavenCentral()
+		mavenRepo urls: "https://oss.sonatype.org/content/groups/public/"
 
-        // repository with the output of the testdroid plugin build
-        maven { url '../repo' }
     }
     dependencies {
         classpath 'com.android.tools.build:gradle:0.4.2'
@@ -17,4 +16,10 @@ apply plugin: 'testdroid'
 android {
     compileSdkVersion 15
     buildToolsVersion "17.0"
+}
+
+testdroid {
+    username "username"
+    password "password"
+
 }
