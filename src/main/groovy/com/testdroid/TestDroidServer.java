@@ -20,10 +20,7 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.builder.testing.api.TestServer;
 import com.android.utils.ILogger;
-import com.testdroid.api.APIClient;
-import com.testdroid.api.APIException;
-import com.testdroid.api.APIListResource;
-import com.testdroid.api.DefaultAPIClient;
+import com.testdroid.api.*;
 import com.testdroid.api.model.APIFiles;
 import com.testdroid.api.model.APIProject;
 import com.testdroid.api.model.APIUser;
@@ -64,7 +61,6 @@ public class TestDroidServer extends TestServer {
             user = client.me();
         } catch (APIException e) {
             logger.error(e, "Client couldn't connect");
-            //TODO: Throw exception
             return;
         }
 
@@ -76,28 +72,36 @@ public class TestDroidServer extends TestServer {
             } else {
                 APIListResource<APIProject> projectList;
                 projectList = user.getProjectsResource(0,2,extension.getProjectName(), null);
+
                 if(projectList == null || projectList.getEntity() == null
-                        || projectList.getEntity().getData() != null || projectList.getEntity().getData().get(0) != null)
+                        || projectList.getEntity().getData() == null || projectList.getEntity().getData().get(0) == null)
                 {
                     logger.warning("Project %s not found.. Skipping upload.", extension.getProjectName() );
                     return;
                 }
                 project = projectList.getEntity().getData().get(0);
+
                 if(projectList.getEntity().getData().size() > 1) {
                     logger.warning("Found more than one project with name %s. Skipping upload.", extension.getProjectName() );
                     return;
 
                 }
             }
+            project = user.getProject(project.getId());
             APIFiles.AndroidFiles androidFiles = project.getFiles(APIFiles.AndroidFiles.class)  ;
-            androidFiles.uploadApp(testApk);
             androidFiles.uploadApp(testedApk);
+            androidFiles.uploadTest(testApk);
+            System.out.println(String.format(
+                    "TESTDROID: Uploading apks into project %s (id:%d)", project.getName(), project.getId()));
 
             logger.info("Uploading apks into project %s (id:%d)", project.getName(), project.getId() );
 
 
         } catch (APIException e) {
             logger.error(e, "Can't upload project");
+            System.out.println(String.format(
+                    "TESTDROID: Uploading failed:%s", e.getStatus()));
+
         }
 
     }
