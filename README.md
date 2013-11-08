@@ -1,4 +1,4 @@
-Gradle plugin to deploys apks to TestDroid's online devices
+Gradle plugin to deploys apks to Testdroid's online devices
 
 A typical project build.gradle will look like this:
 
@@ -20,6 +20,62 @@ A typical project build.gradle will look like this:
     }
     
     testdroid {
+        username 'testdroid@testdroid.com'
+        password 'testdroid'
+        
     }
+
+
+With above configuration your application and instrumentation package 
+are uploaded into Testdroid and test run is launched using all free devices.
+
+To launch test run from command line use testdroidUpload task:
+>./gradlew testdroidUpload
+
+
+You can fully control your testrun using the same configurations options which are available via Testdroid web UI.
+
+Below is listed all the supported configurations parameters:
+testdroid {
+    username  "demo@localhost"
+    password "password"
+    cloudUrl = 'https://cloud.testdroid.com'  //optional - default live
+    projectName "Project 1"  //optional - default: create a new project
+    mode "FULL_RUN" //FULL_RUN / APP_CRAWLER / UI_AUTOMATOR
+
+    deviceGroup "testi grouppen"  //optional - default: free devices
+
+    deviceLanguageCode "En-en"    //optional - locale <ISO 63>_<ISO 3166> default: En-en
+
+    hookUrl "http://localhost:9080"   //optional - call back URL after test run has finished default: empty
+
+    scheduler "PARALLEL" // optional - PARALLEL or SERIAL default: PARALLEL
+
+    testScreenshotDir = "/sdcard/abc"  //optional - custom screenshot folder  default: /sdcard/test-screenshots
+
+    // AppCrawler configuration - set application credentials
+    appCrawlerConfig{
+        applicationPassword = "appPassword2"
+        applicationUserName = "appUsername2"
+    }
+
+    // optional - Custom settings for test execution
+    fullRunConfig {
+        instrumentationRunner =  "com.android.testRunner"
+        withAnnotation = "com.my.annotation"
+        withOutAnnotation = "com.my.not.annotation"
+        limitationType = "CLASS"
+        limitationValue = "foo.bar"
+    }
+
+      //optional
+    uiAutomatorTestConfig {
+        uiAutomatorTestClasses = "foo.class"
+        uiAutomatorJarPath = "tmp/uitests.jar"
+    }
+    
+
+}
+
 
 
