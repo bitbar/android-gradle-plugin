@@ -16,10 +16,56 @@
 
 package com.testdroid
 
+import org.gradle.api.Project
+import org.gradle.util.ConfigureUtil
+
+
+
 class TestDroidExtension {
+    Project project
     String username
     String password
     String projectName
     String cloudUrl
+    String mode
+    String deviceGroup
+    String deviceLanguageCode
+    String hookUrl
+    String scheduler // PARALLEL or SERIAL
+    String testScreenshotDir
+    FullRunConfig fullRunConfig = new FullRunConfig()
+    AppCrawlerConfig appCrawlerConfig =  new AppCrawlerConfig()
+    UiAutomatorTestConfig uiAutomatorTestConfig = new UiAutomatorTestConfig()
 
+    TestDroidExtension(Project project) {
+        this.project = project
+    }
+
+    def appCrawlerConfig(Closure configureClosure) {
+        ConfigureUtil.configure(configureClosure, this.appCrawlerConfig)
+    }
+    def fullRunConfig(Closure configureClosure) {
+        ConfigureUtil.configure(configureClosure, this.fullRunConfig)
+    }
+    def uiAutomatorTestConfig(Closure configureClosure) {
+        ConfigureUtil.configure(configureClosure, this.uiAutomatorTestConfig)
+    }
+    class AppCrawlerConfig {
+        String applicationUserName
+        String applicationPassword
+    }
+
+    class FullRunConfig {
+        String instrumentationRunner
+        String withAnnotation
+        String withOutAnnotation
+        String limitationType
+        String limitationValue
+
+    }
+    class UiAutomatorTestConfig {
+    	String uiAutomatorTestClasses
+    	String uiAutomatorJarPath
+    }
 }
+

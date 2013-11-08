@@ -34,7 +34,7 @@ class TestDroidPlugin implements Plugin<Project> {
             throw new GradleException('The android or android-library has not been applied yet')
         }
 
-        extension = project.extensions.create(PLUGIN_NAME, TestDroidExtension)
+        extension = project.extensions.create(PLUGIN_NAME, TestDroidExtension, project)
 
         project.android.testServer(
                 new TestDroidServer(extension, project.android.logger))
