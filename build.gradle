@@ -40,7 +40,7 @@ javadoc {
     exclude               "**/internal/**"
     options.memberLevel = org.gradle.external.javadoc.JavadocMemberLevel.PROTECTED
 
-    title                 "TestDroid"
+    title                 "Testdroid"
 }
 
 task javadocJar(type: Jar, dependsOn:javadoc) {
@@ -83,7 +83,7 @@ uploadArchives {
             }
 
             pom.project {
-                name 'TestDroid Plugin for Android'
+                name 'Testdroid Plugin for Android'
                 description 'Adds support for deploying Android application to testdroid.com from the Android build system.'
                 url 'http://www.testdroid.com'
                 inceptionYear '2013'
