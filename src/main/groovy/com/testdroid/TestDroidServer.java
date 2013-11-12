@@ -77,7 +77,7 @@ public class TestDroidServer extends TestServer {
         do {
             List<APIDeviceGroup> deviceGroups = deviceGroupList.getEntity().getData();
             for (APIDeviceGroup deviceGroup : deviceGroups) {
-                System.out.println("Device group name" + deviceGroup.getDisplayName());
+
                 if (deviceGroupName.equals(deviceGroup.getDisplayName())) {
                     return deviceGroup;
                 }
@@ -92,7 +92,7 @@ public class TestDroidServer extends TestServer {
     @Override
     public void uploadApks(@NonNull String variantName, @NonNull File testApk, @Nullable File testedApk) {
         APIUser user;
-        System.out.println(String.format(
+        logger.info(String.format(
                 "TESTDROID: Variant(%s), Uploading APKs\n\t%s\n\t%s",
                 variantName,
                 testApk.getAbsolutePath(),
@@ -111,30 +111,33 @@ public class TestDroidServer extends TestServer {
         APIProject project;
         try {
             if (extension.getProjectName() == null) {
-                System.out.println("Project name is not set - creating a new one");
-
-                project = user.createProject(APIProject.Type.valueOf(extension.getMode()));
-
+                logger.warning("Project name is not set - creating a new one");
+                APIProject.Type type = getProjectType(extension.getMode());
+                project = user.createProject(type);
+                logger.info("Created project:"+project.getName());
             } else {
                 APIListResource<APIProject> projectList;
                 projectList = user.getProjectsResource();
 
-                project = searchProject(extension.getProjectName(), APIProject.Type.ANDROID, projectList);
+                project = searchProject(extension.getProjectName(),  getProjectType(extension.getMode()), projectList);
                 if (project == null) {
-                    System.out.println("Can't find project " + extension.getProjectName());
+                    logger.warning("Can't find project " + extension.getProjectName());
                     return;
                 }
 
             }
             //reload
             project = user.getProject(project.getId());
-            System.out.println(project.getName());
+            logger.info(project.getName());
 
             APIListResource<APIDeviceGroup> deviceGroupsResource = user.getDeviceGroupsResource();
             APIDeviceGroup deviceGroup = searchDeviceGroup(extension.getDeviceGroup(), deviceGroupsResource);
 
-            if (deviceGroup == null) {
-                System.out.println("Can't find device group " + extension.getDeviceGroup());
+            if (deviceGroup == null ) {
+                logger.warning("Can't find device group " + extension.getDeviceGroup());
+                return;
+            } else if (deviceGroup.getDeviceCount() == 0) {
+                logger.warning("There is no devices in group:" + extension.getDeviceGroup());
                 return;
             }
 
@@ -142,7 +145,7 @@ public class TestDroidServer extends TestServer {
             config = updateAPITestRunConfigValues(project, extension, deviceGroup.getId());
 
 
-            System.out.println(String.format(
+            logger.info(String.format(
                     "TESTDROID: Uploading apks into project %s (id:%d)", project.getName(), project.getId()));
 
             logger.info("Uploading apks into project %s (id:%d)", project.getName(), project.getId());
@@ -160,23 +163,37 @@ public class TestDroidServer extends TestServer {
     }
 
     private void uploadBinaries(APIProject project, APITestRunConfig config, File testApk, File testedApk) throws APIException {
-        AndroidFiles androidFiles = project.getFiles(AndroidFiles.class);
 
-        androidFiles.uploadApp(testedApk);
-        logger.info("Android application uploaded");
-        if (testedApk != null && config.getMode().equals(APITestRunConfig.Mode.APP_CRAWLER)) {
-            androidFiles.uploadTest(testApk);
-            logger.info("Android test uploaded");
+        if (project.getType().equals(APIProject.Type.UIAUTOMATOR)) {
+
+            UIAutomatorFiles uiAutomatorFiles = project.getFiles(UIAutomatorFiles.class);
+            if(extension.getUiAutomatorTestConfig() == null || extension.getUiAutomatorTestConfig().getUiAutomatorJarPath() == null) {
+                throw new APIException("Configure uiautomator settings");
+            }
+            File jarFile = new File(extension.getUiAutomatorTestConfig().getUiAutomatorJarPath());
+            if (!jarFile.exists()) {
+                throw new APIException("Invalid uiAutomator jar file:" + jarFile.getAbsolutePath());
+            }
+            uiAutomatorFiles.uploadTest(new File(extension.getUiAutomatorTestConfig().getUiAutomatorJarPath()));
+            logger.info("uiautomator file uploaded");
+            uiAutomatorFiles.uploadApp(testedApk);
+            logger.info("Android application uploaded");
+        } else {
+            AndroidFiles androidFiles = project.getFiles(AndroidFiles.class);
+            androidFiles.uploadApp(testedApk);
+            logger.info("Android application uploaded");
+            if (testedApk != null && config.getMode().equals(APITestRunConfig.Mode.FULL_RUN)) {
+                androidFiles.uploadTest(testApk);
+                logger.info("Android test uploaded");
+                return;
+            }
         }
+
+
+
         if (APITestRunConfig.Mode.UIAUTOMATOR == config.getMode()) {
             if (project.getType().equals(APIProject.Type.UIAUTOMATOR)) {
-                UIAutomatorFiles uiAutomatorFiles = project.getFiles(UIAutomatorFiles.class);
-                File jarFile = new File(extension.getUiAutomatorTestConfig().getUiAutomatorJarPath());
-                if (!jarFile.exists()) {
-                    throw new APIException("Invalid uiAutomator jar file:" + jarFile.getAbsolutePath());
-                }
-                uiAutomatorFiles.uploadTest(new File(extension.getUiAutomatorTestConfig().getUiAutomatorJarPath()));
-                logger.info("Android application uploaded");
+
             } else {
                 throw new APIException("Invalid project mode - create a new UIAutomator project");
             }
@@ -185,13 +202,23 @@ public class TestDroidServer extends TestServer {
 
     }
 
+    private APIProject.Type getProjectType(String testrunMode) throws APIException {
+        if(APITestRunConfig.Mode.FULL_RUN.name().equals(testrunMode) || APITestRunConfig.Mode.APP_CRAWLER.name().equals(testrunMode)){
+            return APIProject.Type.ANDROID;
+        } else if(APITestRunConfig.Mode.UIAUTOMATOR.name().equals(testrunMode)) {
+            return APIProject.Type.UIAUTOMATOR;
+        } else {
+            throw new APIException("Not supported test run mode:"+testrunMode+" Enum"+APITestRunConfig.Mode.FULL_RUN.name());
+        }
+
+    }
     private APITestRunConfig updateAPITestRunConfigValues(APIProject project, TestDroidExtension extension, Long deviceGroupId) throws APIException {
 
         APITestRunConfig config = project.getTestRunConfig();
 
         config.setHookURL(extension.getHookUrl());
         config.setDeviceLanguageCode(extension.getDeviceLanguageCode());
-        config.setScheduler(APITestRunConfig.Scheduler.valueOf(extension.getScheduler()));
+        config.setScheduler(extension.getScheduler() != null ? APITestRunConfig.Scheduler.valueOf(extension.getScheduler()) : null );
 
         config.setMode(APITestRunConfig.Mode.valueOf(extension.getMode()));
         //App crawler settings
@@ -222,27 +249,22 @@ public class TestDroidServer extends TestServer {
     public boolean isConfigured() {
         if (extension.getUsername() == null) {
             logger.warning("username has not been set");
-            System.out.println("username has not been set");
             return false;
         }
         if (extension.getPassword() == null) {
             logger.warning("password has not been set");
-            System.out.println("password has not been set");
             return false;
         }
         if (extension.getProjectName() == null) {
             logger.warning("project name has not been set, creating a new project");
-            System.out.println("project name has not been set, creating a new project");
         }
         if (extension.getMode() == null || APITestRunConfig.Mode.valueOf(extension.getMode()) == null) {
-            logger.warning("Test run mode has not been set(default: FULL_RUN");
-            System.out.println("Test run mode has not been set(default: FULL_RUN");
+            logger.warning("Test run mode has not been set(default: FULL_RUN)");
             extension.setMode(APITestRunConfig.Mode.FULL_RUN.name());
         }
         if (extension.getDeviceGroup() == null) {
-            logger.warning("Device group has not been set(default: free devices");
-            System.out.println("Device group has not been set(default: free devices");
-            extension.setDeviceGroup("Free devices");
+            logger.warning("Device group has not been set");
+            return false;
         }
         return true;
     }

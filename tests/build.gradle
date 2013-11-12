@@ -7,7 +7,7 @@ buildscript {
     }
     dependencies {
         classpath 'com.android.tools.build:gradle:0.5.6'
-        classpath 'com.testdroid:gradle:1.1.0'
+        classpath 'com.testdroid:gradle:1.2.0'
     }
 }
 
@@ -24,7 +24,7 @@ testdroid {
     password "password"
     //cloudUrl = 'https://cloud.testdroid.com'  //optional - default live
     projectName "Project 1"  //optional - default: create a new project
-    mode "FULL_RUN" //FULL_RUN / APP_CRAWLER / UI_AUTOMATOR
+    mode "FULL_RUN" //FULL_RUN / APP_CRAWLER / UIAUTOMATOR
 
     // deviceGroup "testi grouppen"  //optional - default: free devices
 
