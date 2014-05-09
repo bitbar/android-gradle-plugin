@@ -17,16 +17,16 @@ dependencies {
     gradleApi gradleApi()
     groovy localGroovy()
 
-    compile 'com.android.tools.build:builder-test-api:0.5.6'
-    compile 'com.testdroid:testdroid-api:1.4.1'
+    compile 'com.android.tools.build:builder-test-api:0.6+'
+    compile 'com.testdroid:testdroid-api:1.4.8'
     testCompile 'junit:junit:3.8.1'
-    testCompile 'com.android.tools.build:gradle:0.5.6'
+    testCompile 'com.android.tools.build:gradle:0.6+'
 
 }
 
 group = 'com.testdroid'
 archivesBaseName = 'gradle'
-version = '1.2.0'
+version = '1.2.1'
 sourceCompatibility = 1.5
 
 // custom tasks for creating source/javadoc jars
