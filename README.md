@@ -7,8 +7,8 @@ A typical project build.gradle will look like this:
             mavenCentral()
         }
         dependencies {
-            classpath 'com.android.tools.build:gradle:0.4.2'
-            classpath 'com.testdroid:gradle:1.0'
+            classpath 'com.android.tools.build:gradle:0.6+'
+            classpath 'com.testdroid:gradle:1.2.2'
         }
     }
     
@@ -23,6 +23,7 @@ A typical project build.gradle will look like this:
         username 'testdroid@testdroid.com'
         password 'testdroid'
         deviceGroup 'My Devices'
+        mode "FULL_RUN"
     }
 
 
@@ -45,7 +46,7 @@ Below is listed all the supported configurations parameters:
         cloudUrl = 'https://cloud.testdroid.com'  //optional - default live
         projectName "Project 1"  //optional - default: create a new project
         mode "FULL_RUN" //FULL_RUN / APP_CRAWLER / UI_AUTOMATOR
-    
+        testRunName "Custom test run name" //optional - default: build variant name
 
         deviceLanguageCode "en-US"    //optional - locale <ISO 63>_<ISO 3166> default: en-US
     
@@ -68,6 +69,7 @@ Below is listed all the supported configurations parameters:
             withOutAnnotation = "com.my.not.annotation"
             limitationType = "CLASS"
             limitationValue = "foo.bar"
+            instrumentationAPKPath = "/tmp/mytesti.apk" //optional - custom instrumentation apk path
         }
     
           //optional
