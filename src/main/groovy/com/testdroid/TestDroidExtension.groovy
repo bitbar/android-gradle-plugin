@@ -33,6 +33,8 @@ class TestDroidExtension {
     String hookUrl
     String scheduler // PARALLEL or SERIAL
     String testScreenshotDir
+    String testRunName
+
     FullRunConfig fullRunConfig = new FullRunConfig()
     AppCrawlerConfig appCrawlerConfig =  new AppCrawlerConfig()
     UiAutomatorTestConfig uiAutomatorTestConfig = new UiAutomatorTestConfig()
@@ -61,6 +63,7 @@ class TestDroidExtension {
         String withOutAnnotation
         String limitationType
         String limitationValue
+        String instrumentationAPKPath
 
     }
     class UiAutomatorTestConfig {

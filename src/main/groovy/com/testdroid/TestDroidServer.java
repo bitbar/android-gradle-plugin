@@ -144,14 +144,18 @@ public class TestDroidServer extends TestServer {
             APITestRunConfig config;
             config = updateAPITestRunConfigValues(project, extension, deviceGroup.getId());
 
-
-            logger.info(String.format(
-                    "TESTDROID: Uploading apks into project %s (id:%d)", project.getName(), project.getId()));
-
             logger.info("TESTDROID: Uploading apks into project %s (id:%d)", project.getName(), project.getId());
-            uploadBinaries(project, config, testApk, testedApk);
+            File instrumentationAPK = testApk;
 
-            project.run(variantName);
+            if(extension.getFullRunConfig() != null && extension.getFullRunConfig().getInstrumentationAPKPath() != null
+                    && new File(extension.getFullRunConfig().getInstrumentationAPKPath()).exists()) {
+
+                instrumentationAPK = new File(extension.getFullRunConfig().getInstrumentationAPKPath());
+                logger.info("TESTDROID: Using custom path for instrumentation APK: %s", extension.getFullRunConfig().getInstrumentationAPKPath());
+            }
+            uploadBinaries(project, config, instrumentationAPK, testedApk);
+
+            project.run(extension.getTestRunName() == null ? variantName : extension.getTestRunName());
 
         } catch (APIException e) {
             logger.error(e, "Can't upload project");
