@@ -20,10 +20,11 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.builder.testing.api.TestServer;
 import com.android.utils.ILogger;
-import com.testdroid.api.*;
+import com.testdroid.api.APIClient;
+import com.testdroid.api.APIException;
+import com.testdroid.api.APIListResource;
+import com.testdroid.api.DefaultAPIClient;
 import com.testdroid.api.model.*;
-import com.testdroid.api.model.APIProject;
-import org.gradle.api.Project;
 
 import java.io.File;
 import java.util.List;
@@ -184,9 +185,15 @@ public class TestDroidServer extends TestServer {
             logger.info("TESTDROID: Android application uploaded");
         } else {
             AndroidFiles androidFiles = project.getFiles(AndroidFiles.class);
-            androidFiles.uploadApp(testedApk);
-            logger.info("TESTDROID: Android application uploaded");
-            if (testedApk != null && config.getMode().equals(APITestRunConfig.Mode.FULL_RUN)) {
+
+            if(testedApk != null && testedApk.exists()) {
+                androidFiles.uploadApp(testedApk);
+                logger.info("TESTDROID: Android application uploaded");
+            } else {
+                logger.warning("TESTDROID: Target application has not been added - uploading only test apk ");
+            }
+
+            if (testApk != null && config.getMode().equals(APITestRunConfig.Mode.FULL_RUN)) {
                 androidFiles.uploadTest(testApk);
                 logger.info("TESTDROID: Android test uploaded");
                 return;
