@@ -19,24 +19,30 @@ package com.testdroid;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.builder.testing.api.TestServer;
-import com.android.utils.ILogger;
 import com.testdroid.api.APIClient;
 import com.testdroid.api.APIException;
 import com.testdroid.api.APIListResource;
 import com.testdroid.api.DefaultAPIClient;
-import com.testdroid.api.model.*;
+import com.testdroid.api.model.APIDeviceGroup;
+import com.testdroid.api.model.APIProject;
+import com.testdroid.api.model.APITestRunConfig;
+import com.testdroid.api.model.APIUser;
+import com.testdroid.api.model.AndroidFiles;
+import com.testdroid.api.model.UIAutomatorFiles;
 
 import java.io.File;
 import java.util.List;
 
+import org.gradle.api.logging.Logger;
+
 public class TestDroidServer extends TestServer {
 
     private final TestDroidExtension extension;
-    private final ILogger logger;
+    private final Logger logger;
     private final String cloudURL = "https://cloud.testdroid.com";
 
     TestDroidServer(@NonNull TestDroidExtension extension,
-                    @NonNull ILogger logger) {
+                    @NonNull Logger logger) {
         this.extension = extension;
         this.logger = logger;
     }
@@ -105,14 +111,14 @@ public class TestDroidServer extends TestServer {
         try {
             user = client.me();
         } catch (APIException e) {
-            logger.error(e, "TESTDROID: Client couldn't connect");
+            logger.error("TESTDROID: Client couldn't connect", e);
             return;
         }
 
         APIProject project;
         try {
             if (extension.getProjectName() == null) {
-                logger.warning("TESTDROID: Project name is not set - creating a new one");
+                logger.warn("TESTDROID: Project name is not set - creating a new one");
                 APIProject.Type type = getProjectType(extension.getMode());
                 project = user.createProject(type);
                 logger.info("TESTDROID: Created project:"+project.getName());
@@ -122,7 +128,7 @@ public class TestDroidServer extends TestServer {
 
                 project = searchProject(extension.getProjectName(),  getProjectType(extension.getMode()), projectList);
                 if (project == null) {
-                    logger.warning("TESTDROID: Can't find project " + extension.getProjectName());
+                    logger.warn("TESTDROID: Can't find project " + extension.getProjectName());
                     return;
                 }
 
@@ -135,10 +141,10 @@ public class TestDroidServer extends TestServer {
             APIDeviceGroup deviceGroup = searchDeviceGroup(extension.getDeviceGroup(), deviceGroupsResource);
 
             if (deviceGroup == null ) {
-                logger.warning("TESTDROID: Can't find device group " + extension.getDeviceGroup());
+                logger.warn("TESTDROID: Can't find device group " + extension.getDeviceGroup());
                 return;
             } else if (deviceGroup.getDeviceCount() == 0) {
-                logger.warning("TESTDROID: There is no devices in group:" + extension.getDeviceGroup());
+                logger.warn("TESTDROID: There is no devices in group:" + extension.getDeviceGroup());
                 return;
             }
 
@@ -159,7 +165,7 @@ public class TestDroidServer extends TestServer {
             project.run(extension.getTestRunName() == null ? variantName : extension.getTestRunName());
 
         } catch (APIException e) {
-            logger.error(e, "Can't upload project");
+            logger.error("Can't upload project", e);
             System.out.println(String.format(
                     "TESTDROID: Uploading failed:%s", e.getStatus()));
 
@@ -190,7 +196,7 @@ public class TestDroidServer extends TestServer {
                 androidFiles.uploadApp(testedApk);
                 logger.info("TESTDROID: Android application uploaded");
             } else {
-                logger.warning("TESTDROID: Target application has not been added - uploading only test apk ");
+                logger.warn("TESTDROID: Target application has not been added - uploading only test apk ");
             }
 
             if (testApk != null && config.getMode().equals(APITestRunConfig.Mode.FULL_RUN)) {
@@ -259,22 +265,22 @@ public class TestDroidServer extends TestServer {
     @Override
     public boolean isConfigured() {
         if (extension.getUsername() == null) {
-            logger.warning("TESTDROID: username has not been set");
+            logger.warn("TESTDROID: username has not been set");
             return false;
         }
         if (extension.getPassword() == null) {
-            logger.warning("TESTDROID: password has not been set");
+            logger.warn("TESTDROID: password has not been set");
             return false;
         }
         if (extension.getProjectName() == null) {
-            logger.warning("TESTDROID: project name has not been set, creating a new project");
+            logger.warn("TESTDROID: project name has not been set, creating a new project");
         }
         if (extension.getMode() == null || APITestRunConfig.Mode.valueOf(extension.getMode()) == null) {
-            logger.warning("TESTDROID: Test run mode has not been set(default: FULL_RUN)");
+            logger.warn("TESTDROID: Test run mode has not been set(default: FULL_RUN)");
             extension.setMode(APITestRunConfig.Mode.FULL_RUN.name());
         }
         if (extension.getDeviceGroup() == null) {
-            logger.warning("TESTDROID: Device group has not been set");
+            logger.warn("TESTDROID: Device group has not been set");
             return false;
         }
         return true;
