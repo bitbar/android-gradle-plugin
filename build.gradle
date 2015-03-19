@@ -17,10 +17,10 @@ dependencies {
     gradleApi gradleApi()
     groovy localGroovy()
 
-    compile 'com.android.tools.build:builder-test-api:0.6+'
+    compile 'com.android.tools.build:builder-test-api:1.1.0'
     compile 'com.testdroid:testdroid-api:1.4.8'
     testCompile 'junit:junit:3.8.1'
-    testCompile 'com.android.tools.build:gradle:0.6+'
+    testCompile 'com.android.tools.build:gradle:1.1.0'
 
 }
 
