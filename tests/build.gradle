@@ -6,8 +6,8 @@ buildscript {
         maven { url '../repo' }
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:0.6+'
-        classpath 'com.testdroid:gradle:1.2.2'
+        classpath 'com.android.tools.build:gradle:1.1.0'
+        classpath 'com.testdroid:gradle:1.3.0'
     }
 }
 
@@ -16,7 +16,7 @@ apply plugin: 'testdroid'
 
 android {
     compileSdkVersion 15
-    buildToolsVersion "17.0"
+    buildToolsVersion "19.1.0"
 
 }
 
