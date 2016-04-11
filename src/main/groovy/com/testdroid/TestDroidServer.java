@@ -23,17 +23,13 @@ import com.testdroid.api.APIClient;
 import com.testdroid.api.APIException;
 import com.testdroid.api.APIListResource;
 import com.testdroid.api.DefaultAPIClient;
-import com.testdroid.api.model.APIDeviceGroup;
-import com.testdroid.api.model.APIProject;
-import com.testdroid.api.model.APITestRunConfig;
-import com.testdroid.api.model.APIUser;
-import com.testdroid.api.model.AndroidFiles;
-import com.testdroid.api.model.UIAutomatorFiles;
+import com.testdroid.api.model.*;
+import org.apache.commons.lang.StringUtils;
+import org.apache.http.HttpHost;
+import org.gradle.api.logging.Logger;
 
 import java.io.File;
 import java.util.List;
-
-import org.gradle.api.logging.Logger;
 
 public class TestDroidServer extends TestServer {
 
@@ -106,7 +102,13 @@ public class TestDroidServer extends TestServer {
                 testedApk != null ? testedApk.getAbsolutePath() : "<none>"));
         String testdroidCloudURL = extension.getCloudUrl() == null ? cloudURL : extension.getCloudUrl();
         logger.info("Testdroid URL %s", testdroidCloudURL);
-        APIClient client = new DefaultAPIClient(testdroidCloudURL, extension.getUsername(), extension.getPassword());
+        APIClient client;
+
+        if (extension.getUseSystemProxySettings() == null || extension.getUseSystemProxySettings() == true) {
+            client = createAPIClientUsingSystemProxy(testdroidCloudURL);
+        } else {
+            client = new DefaultAPIClient(testdroidCloudURL, extension.getUsername(), extension.getPassword());
+        }
 
         try {
             user = client.me();
@@ -171,6 +173,33 @@ public class TestDroidServer extends TestServer {
 
         }
 
+    }
+
+    private APIClient createAPIClientUsingSystemProxy(String testdroidCloudURL) {
+        APIClient client = null;
+        String proxyHost = System.getProperty("http.proxyHost");
+
+        if(StringUtils.isBlank(proxyHost)) {
+            return new DefaultAPIClient(testdroidCloudURL, extension.getUsername(), extension.getPassword());
+        }
+
+        String proxyPort = System.getProperty("http.proxyPort");
+
+        int port = -1;
+        try {
+            port = Integer.valueOf(proxyPort);
+        } catch(NumberFormatException nfe) {
+            //ignore and use default
+        }
+
+        HttpHost httpHost = new HttpHost(proxyHost, port);
+        String proxyUser = System.getProperty("http.proxyUser");
+        String proxyPassword = System.getProperty("http.proxyPassword");
+
+        client = new DefaultAPIClient(testdroidCloudURL, extension.getUsername(), extension.getPassword(),
+                httpHost, proxyUser, proxyPassword, false );
+
+        return client;
     }
 
     private void uploadBinaries(APIProject project, APITestRunConfig config, File testApk, File testedApk) throws APIException {

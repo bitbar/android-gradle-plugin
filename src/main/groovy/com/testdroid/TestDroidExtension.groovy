@@ -34,6 +34,7 @@ class TestDroidExtension {
     String scheduler // PARALLEL or SERIAL
     String testScreenshotDir
     String testRunName
+    Boolean useSystemProxySettings
 
     FullRunConfig fullRunConfig = new FullRunConfig()
     AppCrawlerConfig appCrawlerConfig =  new AppCrawlerConfig()
@@ -52,6 +53,7 @@ class TestDroidExtension {
     def uiAutomatorTestConfig(Closure configureClosure) {
         ConfigureUtil.configure(configureClosure, this.uiAutomatorTestConfig)
     }
+
     class AppCrawlerConfig {
         String applicationUserName
         String applicationPassword
@@ -70,5 +72,6 @@ class TestDroidExtension {
     	String uiAutomatorTestClasses
     	String uiAutomatorJarPath
     }
+
 }
 

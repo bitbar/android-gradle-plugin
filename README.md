@@ -56,6 +56,8 @@ Below is listed all the supported configurations parameters:
     
         testScreenshotDir = "/sdcard/abc"  //optional - custom screenshot folder  default: /sdcard/test-screenshots
     
+        useSystemProxySettings true //optional - Use system proxy settings  default: true
+    
         // AppCrawler configuration - set application credentials
         appCrawlerConfig{
             applicationPassword = "appPassword2"
