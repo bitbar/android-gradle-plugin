@@ -66,7 +66,7 @@ Below is listed all the supported configurations parameters:
     
         // optional - Custom settings for test execution
         fullRunConfig {
-            instrumentationRunner =  "com.android.testRunner"
+            instrumentationRunner =  "com.android.testRunner" //use android.support.test.runner.AndroidJUnitRunner for Espresso2 tests
             withAnnotation = "com.my.annotation"
             withOutAnnotation = "com.my.not.annotation"
             limitationType = "CLASS"
