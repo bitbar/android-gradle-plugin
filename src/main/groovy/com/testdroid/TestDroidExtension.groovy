@@ -20,11 +20,11 @@ import org.gradle.api.Project
 import org.gradle.util.ConfigureUtil
 
 
-
 class TestDroidExtension {
     Project project
     String username
     String password
+    String apiKey
     String projectName
     String cloudUrl
     String mode
@@ -34,10 +34,11 @@ class TestDroidExtension {
     String scheduler // PARALLEL or SERIAL
     String testScreenshotDir
     String testRunName
-    Boolean useSystemProxySettings
+    Boolean useSystemProxySettings = Boolean.FALSE
+    Authorization authorization = Authorization.OAUTH2
 
     FullRunConfig fullRunConfig = new FullRunConfig()
-    AppCrawlerConfig appCrawlerConfig =  new AppCrawlerConfig()
+    AppCrawlerConfig appCrawlerConfig = new AppCrawlerConfig()
     UiAutomatorTestConfig uiAutomatorTestConfig = new UiAutomatorTestConfig()
 
     TestDroidExtension(Project project) {
@@ -47,9 +48,11 @@ class TestDroidExtension {
     def appCrawlerConfig(Closure configureClosure) {
         ConfigureUtil.configure(configureClosure, this.appCrawlerConfig)
     }
+
     def fullRunConfig(Closure configureClosure) {
         ConfigureUtil.configure(configureClosure, this.fullRunConfig)
     }
+
     def uiAutomatorTestConfig(Closure configureClosure) {
         ConfigureUtil.configure(configureClosure, this.uiAutomatorTestConfig)
     }
@@ -68,9 +71,15 @@ class TestDroidExtension {
         String instrumentationAPKPath
 
     }
+
     class UiAutomatorTestConfig {
-    	String uiAutomatorTestClasses
-    	String uiAutomatorJarPath
+        String uiAutomatorTestClasses
+        String uiAutomatorJarPath
+    }
+
+    enum Authorization {
+        APIKEY,
+        OAUTH2
     }
 
 }
