@@ -39,8 +39,13 @@ You can fully control your testrun using the same configurations options which a
 Below is listed all the supported configurations parameters:
 
     testdroid {
-        username  "demo@localhost"
-        password "password"
+        username  "demo@localhost" //required by default or authorization "OAUTH2"
+        password "password" //required by default or authorization "OAUTH2"
+
+        authorization "OAUTH2" //optional "APIKEY"|"OAUTH2"(default)
+
+        apiKey "d409cad93079b6c6cd55b79e927b17i5" //required if authorization "APIKEY"
+
         deviceGroup "test group"
 
         cloudUrl = 'https://cloud.testdroid.com'  //optional - default live

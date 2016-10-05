@@ -19,10 +19,7 @@ package com.testdroid;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.builder.testing.api.TestServer;
-import com.testdroid.api.APIClient;
-import com.testdroid.api.APIException;
-import com.testdroid.api.APIListResource;
-import com.testdroid.api.DefaultAPIClient;
+import com.testdroid.api.*;
 import com.testdroid.api.model.*;
 import org.apache.commons.lang.StringUtils;
 import org.apache.http.HttpHost;
@@ -30,6 +27,8 @@ import org.gradle.api.logging.Logger;
 
 import java.io.File;
 import java.util.List;
+
+import static com.testdroid.TestDroidExtension.Authorization.*;
 
 public class TestDroidServer extends TestServer {
 
@@ -102,14 +101,12 @@ public class TestDroidServer extends TestServer {
                 testedApk != null ? testedApk.getAbsolutePath() : "<none>"));
         String testdroidCloudURL = extension.getCloudUrl() == null ? cloudURL : extension.getCloudUrl();
         logger.info("Testdroid URL %s", testdroidCloudURL);
-        APIClient client;
 
-        if (extension.getUseSystemProxySettings() == null || extension.getUseSystemProxySettings() == true) {
-            client = createAPIClientUsingSystemProxy(testdroidCloudURL);
-        } else {
-            client = new DefaultAPIClient(testdroidCloudURL, extension.getUsername(), extension.getPassword());
+        APIClient client = createAPIClient(testdroidCloudURL, extension.getAuthorization());
+        if (client == null) {
+            logger.error("TESTDROID: Client couldn't be configured");
+            return;
         }
-
         try {
             user = client.me();
         } catch (APIException e) {
@@ -123,12 +120,12 @@ public class TestDroidServer extends TestServer {
                 logger.warn("TESTDROID: Project name is not set - creating a new one");
                 APIProject.Type type = getProjectType(extension.getMode());
                 project = user.createProject(type);
-                logger.info("TESTDROID: Created project:"+project.getName());
+                logger.info("TESTDROID: Created project:" + project.getName());
             } else {
                 APIListResource<APIProject> projectList;
                 projectList = user.getProjectsResource();
 
-                project = searchProject(extension.getProjectName(),  getProjectType(extension.getMode()), projectList);
+                project = searchProject(extension.getProjectName(), getProjectType(extension.getMode()), projectList);
                 if (project == null) {
                     logger.warn("TESTDROID: Can't find project " + extension.getProjectName());
                     return;
@@ -142,7 +139,7 @@ public class TestDroidServer extends TestServer {
             APIListResource<APIDeviceGroup> deviceGroupsResource = user.getDeviceGroupsResource();
             APIDeviceGroup deviceGroup = searchDeviceGroup(extension.getDeviceGroup(), deviceGroupsResource);
 
-            if (deviceGroup == null ) {
+            if (deviceGroup == null) {
                 logger.warn("TESTDROID: Can't find device group " + extension.getDeviceGroup());
                 return;
             } else if (deviceGroup.getDeviceCount() == 0) {
@@ -156,7 +153,7 @@ public class TestDroidServer extends TestServer {
             logger.info("TESTDROID: Uploading apks into project %s (id:%d)", project.getName(), project.getId());
             File instrumentationAPK = testApk;
 
-            if(extension.getFullRunConfig() != null && extension.getFullRunConfig().getInstrumentationAPKPath() != null
+            if (extension.getFullRunConfig() != null && extension.getFullRunConfig().getInstrumentationAPKPath() != null
                     && new File(extension.getFullRunConfig().getInstrumentationAPKPath()).exists()) {
 
                 instrumentationAPK = new File(extension.getFullRunConfig().getInstrumentationAPKPath());
@@ -175,31 +172,43 @@ public class TestDroidServer extends TestServer {
 
     }
 
-    private APIClient createAPIClientUsingSystemProxy(String testdroidCloudURL) {
-        APIClient client = null;
+    private APIClient createAPIClient(String testdroidCloudURL, TestDroidExtension.Authorization authorization) {
         String proxyHost = System.getProperty("http.proxyHost");
-
-        if(StringUtils.isBlank(proxyHost)) {
-            return new DefaultAPIClient(testdroidCloudURL, extension.getUsername(), extension.getPassword());
+        Boolean useProxy = extension.getUseSystemProxySettings() && StringUtils.isNotBlank(proxyHost);
+        String proxyUser = System.getProperty("http.proxyUser");
+        String proxyPassword = System.getProperty("http.proxyPassword");
+        Boolean useProxyCredentials = proxyUser != null && proxyPassword != null && useProxy;
+        APIClientType apiClientType = APIClientType.resolveAPIClientType(authorization, useProxy, useProxyCredentials);
+        logger.warn("TESTDROID: Using APIClientType {}", apiClientType);
+        switch (apiClientType) {
+            case APIKEY:
+                return new APIKeyClient(testdroidCloudURL, extension.getApiKey());
+            case APIKEY_PROXY:
+                return new APIKeyClient(testdroidCloudURL, extension.getApiKey(), buildProxyHost(), false);
+            case APIKEY_PROXY_CREDENTIALS:
+                return new APIKeyClient(testdroidCloudURL, extension.getApiKey(), buildProxyHost(), proxyUser, proxyPassword, false);
+            case OAUTH:
+                return new DefaultAPIClient(testdroidCloudURL, extension.getUsername(), extension.getPassword());
+            case OAUTH_PROXY:
+                return new DefaultAPIClient(testdroidCloudURL, extension.getUsername(), extension.getPassword(), buildProxyHost(), false);
+            case OAUTH_PROXY_CREDENTIALS:
+                return new DefaultAPIClient(testdroidCloudURL, extension.getUsername(), extension.getPassword(), buildProxyHost(), proxyUser, proxyPassword, false);
+            case UNSUPPORTED:
+            default:
+                return null;
         }
+    }
 
+    private HttpHost buildProxyHost() {
+        String proxyHost = System.getProperty("http.proxyHost");
         String proxyPort = System.getProperty("http.proxyPort");
-
         int port = -1;
         try {
             port = Integer.valueOf(proxyPort);
-        } catch(NumberFormatException nfe) {
+        } catch (NumberFormatException nfe) {
             //ignore and use default
         }
-
-        HttpHost httpHost = new HttpHost(proxyHost, port);
-        String proxyUser = System.getProperty("http.proxyUser");
-        String proxyPassword = System.getProperty("http.proxyPassword");
-
-        client = new DefaultAPIClient(testdroidCloudURL, extension.getUsername(), extension.getPassword(),
-                httpHost, proxyUser, proxyPassword, false );
-
-        return client;
+        return new HttpHost(proxyHost, port);
     }
 
     private void uploadBinaries(APIProject project, APITestRunConfig config, File testApk, File testedApk) throws APIException {
@@ -207,7 +216,7 @@ public class TestDroidServer extends TestServer {
         if (project.getType().equals(APIProject.Type.UIAUTOMATOR)) {
 
             UIAutomatorFiles uiAutomatorFiles = project.getFiles(UIAutomatorFiles.class);
-            if(extension.getUiAutomatorTestConfig() == null || extension.getUiAutomatorTestConfig().getUiAutomatorJarPath() == null) {
+            if (extension.getUiAutomatorTestConfig() == null || extension.getUiAutomatorTestConfig().getUiAutomatorJarPath() == null) {
                 throw new APIException("TESTDROID: Configure uiautomator settings");
             }
             File jarFile = new File(extension.getUiAutomatorTestConfig().getUiAutomatorJarPath());
@@ -221,7 +230,7 @@ public class TestDroidServer extends TestServer {
         } else {
             AndroidFiles androidFiles = project.getFiles(AndroidFiles.class);
 
-            if(testedApk != null && testedApk.exists()) {
+            if (testedApk != null && testedApk.exists()) {
                 androidFiles.uploadApp(testedApk);
                 logger.info("TESTDROID: Android application uploaded");
             } else {
@@ -236,7 +245,6 @@ public class TestDroidServer extends TestServer {
         }
 
 
-
         if (APITestRunConfig.Mode.UIAUTOMATOR == config.getMode()) {
             if (project.getType().equals(APIProject.Type.UIAUTOMATOR)) {
 
@@ -249,22 +257,23 @@ public class TestDroidServer extends TestServer {
     }
 
     private APIProject.Type getProjectType(String testrunMode) throws APIException {
-        if(APITestRunConfig.Mode.FULL_RUN.name().equals(testrunMode) || APITestRunConfig.Mode.APP_CRAWLER.name().equals(testrunMode)){
+        if (APITestRunConfig.Mode.FULL_RUN.name().equals(testrunMode) || APITestRunConfig.Mode.APP_CRAWLER.name().equals(testrunMode)) {
             return APIProject.Type.ANDROID;
-        } else if(APITestRunConfig.Mode.UIAUTOMATOR.name().equals(testrunMode)) {
+        } else if (APITestRunConfig.Mode.UIAUTOMATOR.name().equals(testrunMode)) {
             return APIProject.Type.UIAUTOMATOR;
         } else {
-            throw new APIException("TESTDROID: Not supported test run mode:"+testrunMode+" Enum"+APITestRunConfig.Mode.FULL_RUN.name());
+            throw new APIException("TESTDROID: Not supported test run mode:" + testrunMode + " Enum" + APITestRunConfig.Mode.FULL_RUN.name());
         }
 
     }
+
     private APITestRunConfig updateAPITestRunConfigValues(APIProject project, TestDroidExtension extension, Long deviceGroupId) throws APIException {
 
         APITestRunConfig config = project.getTestRunConfig();
 
         config.setHookURL(extension.getHookUrl());
         config.setDeviceLanguageCode(extension.getDeviceLanguageCode());
-        config.setScheduler(extension.getScheduler() != null ? APITestRunConfig.Scheduler.valueOf(extension.getScheduler()) : null );
+        config.setScheduler(extension.getScheduler() != null ? APITestRunConfig.Scheduler.valueOf(extension.getScheduler()) : null);
 
         config.setMode(APITestRunConfig.Mode.valueOf(extension.getMode()));
         //App crawler settings
@@ -293,12 +302,16 @@ public class TestDroidServer extends TestServer {
 
     @Override
     public boolean isConfigured() {
-        if (extension.getUsername() == null) {
+        if (extension.getAuthorization() == OAUTH2 && extension.getUsername() == null) {
             logger.warn("TESTDROID: username has not been set");
             return false;
         }
-        if (extension.getPassword() == null) {
+        if (extension.getAuthorization() == OAUTH2 && extension.getPassword() == null) {
             logger.warn("TESTDROID: password has not been set");
+            return false;
+        }
+        if (extension.getAuthorization() == APIKEY && extension.getApiKey() == null) {
+            logger.warn("TESTDROID: apiKey has not been set");
             return false;
         }
         if (extension.getProjectName() == null) {
