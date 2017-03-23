@@ -159,7 +159,7 @@ public class TestDroidServer extends TestServer {
                 instrumentationAPK = new File(extension.getFullRunConfig().getInstrumentationAPKPath());
                 logger.info("TESTDROID: Using custom path for instrumentation APK: %s", extension.getFullRunConfig().getInstrumentationAPKPath());
             }
-            uploadBinaries(project, config, instrumentationAPK, testedApk);
+            uploadBinaries(project, getProjectType(extension.getMode()), instrumentationAPK, testedApk);
 
             project.run(extension.getTestRunName() == null ? variantName : extension.getTestRunName());
 
@@ -211,7 +211,7 @@ public class TestDroidServer extends TestServer {
         return new HttpHost(proxyHost, port);
     }
 
-    private void uploadBinaries(APIProject project, APITestRunConfig config, File testApk, File testedApk) throws APIException {
+    private void uploadBinaries(APIProject project, APIProject.Type projectType, File testApk, File testedApk) throws APIException {
 
         if (project.getType().equals(APIProject.Type.UIAUTOMATOR)) {
 
@@ -237,21 +237,11 @@ public class TestDroidServer extends TestServer {
                 logger.warn("TESTDROID: Target application has not been added - uploading only test apk ");
             }
 
-            if (testApk != null && config.getMode().equals(APITestRunConfig.Mode.FULL_RUN)) {
+            if (testApk != null && APIProject.Type.ANDROID == projectType) {
                 androidFiles.uploadTest(testApk);
                 logger.info("TESTDROID: Android test uploaded");
                 return;
             }
-        }
-
-
-        if (APITestRunConfig.Mode.UIAUTOMATOR == config.getMode()) {
-            if (project.getType().equals(APIProject.Type.UIAUTOMATOR)) {
-
-            } else {
-                throw new APIException("TESTDROID: Invalid project mode - create a new UIAutomator project");
-            }
-
         }
 
     }
