@@ -47,10 +47,9 @@ public class TestDroidServer extends TestServer {
         return "testdroid";
     }
 
-    private APIProject searchProject(String projectName, APIProject.Type type, APIListResource<APIProject> projectList) throws APIException {
+    private APIProject searchProject(String projectName, APIListResource<APIProject> projectList) throws APIException {
         if (projectList == null || projectList.getTotal() == 0 || projectList.getEntity() == null ||
                 projectList.getEntity().getData() == null) {
-
             return null;
         }
 
@@ -118,14 +117,13 @@ public class TestDroidServer extends TestServer {
         try {
             if (extension.getProjectName() == null) {
                 logger.warn("TESTDROID: Project name is not set - creating a new one");
-                APIProject.Type type = getProjectType(extension.getMode());
-                project = user.createProject(type);
+                project = user.createProject(APIProject.Type.ANDROID);
                 logger.info("TESTDROID: Created project:" + project.getName());
             } else {
                 APIListResource<APIProject> projectList;
                 projectList = user.getProjectsResource();
 
-                project = searchProject(extension.getProjectName(), getProjectType(extension.getMode()), projectList);
+                project = searchProject(extension.getProjectName(), projectList);
                 if (project == null) {
                     logger.warn("TESTDROID: Can't find project " + extension.getProjectName());
                     return;
@@ -159,7 +157,7 @@ public class TestDroidServer extends TestServer {
                 instrumentationAPK = new File(extension.getFullRunConfig().getInstrumentationAPKPath());
                 logger.info("TESTDROID: Using custom path for instrumentation APK: %s", extension.getFullRunConfig().getInstrumentationAPKPath());
             }
-            uploadBinaries(project, getProjectType(extension.getMode()), instrumentationAPK, testedApk);
+            uploadBinaries(project, instrumentationAPK, testedApk);
 
             project.run(extension.getTestRunName() == null ? variantName : extension.getTestRunName());
 
@@ -211,11 +209,10 @@ public class TestDroidServer extends TestServer {
         return new HttpHost(proxyHost, port);
     }
 
-    private void uploadBinaries(APIProject project, APIProject.Type projectType, File testApk, File testedApk) throws APIException {
+    private void uploadBinaries(APIProject project, File testApk, File testedApk) throws APIException {
 
         if (project.getType().equals(APIProject.Type.UIAUTOMATOR)) {
 
-            UIAutomatorFiles uiAutomatorFiles = project.getFiles(UIAutomatorFiles.class);
             if (extension.getUiAutomatorTestConfig() == null || extension.getUiAutomatorTestConfig().getUiAutomatorJarPath() == null) {
                 throw new APIException("TESTDROID: Configure uiautomator settings");
             }
@@ -223,22 +220,21 @@ public class TestDroidServer extends TestServer {
             if (!jarFile.exists()) {
                 throw new APIException("TESTDROID: Invalid uiAutomator jar file:" + jarFile.getAbsolutePath());
             }
-            uiAutomatorFiles.uploadTest(new File(extension.getUiAutomatorTestConfig().getUiAutomatorJarPath()));
+            project.uploadTest(new File(extension.getUiAutomatorTestConfig().getUiAutomatorJarPath()), "application/octet-stream");
             logger.info("TESTDROID: uiautomator file uploaded");
-            uiAutomatorFiles.uploadApp(testedApk);
+            project.uploadApplication(testedApk, "application/octet-stream");
             logger.info("TESTDROID: Android application uploaded");
         } else {
-            AndroidFiles androidFiles = project.getFiles(AndroidFiles.class);
 
             if (testedApk != null && testedApk.exists()) {
-                androidFiles.uploadApp(testedApk);
+                project.uploadApplication(testedApk, "application/octet-stream");
                 logger.info("TESTDROID: Android application uploaded");
             } else {
                 logger.warn("TESTDROID: Target application has not been added - uploading only test apk ");
             }
 
-            if (testApk != null && APIProject.Type.ANDROID == projectType) {
-                androidFiles.uploadTest(testApk);
+            if (testApk != null && APIProject.Type.ANDROID == project.getType()) {
+                project.uploadTest(testApk, "application/octet-stream");
                 logger.info("TESTDROID: Android test uploaded");
                 return;
             }
@@ -246,16 +242,7 @@ public class TestDroidServer extends TestServer {
 
     }
 
-    private APIProject.Type getProjectType(String testrunMode) throws APIException {
-        if (APITestRunConfig.Mode.FULL_RUN.name().equals(testrunMode) || APITestRunConfig.Mode.APP_CRAWLER.name().equals(testrunMode)) {
-            return APIProject.Type.ANDROID;
-        } else if (APITestRunConfig.Mode.UIAUTOMATOR.name().equals(testrunMode)) {
-            return APIProject.Type.UIAUTOMATOR;
-        } else {
-            throw new APIException("TESTDROID: Not supported test run mode:" + testrunMode + " Enum" + APITestRunConfig.Mode.FULL_RUN.name());
-        }
 
-    }
 
     private APITestRunConfig updateAPITestRunConfigValues(APIProject project, TestDroidExtension extension, Long deviceGroupId) throws APIException {
 
@@ -264,8 +251,10 @@ public class TestDroidServer extends TestServer {
         config.setHookURL(extension.getHookUrl());
         config.setDeviceLanguageCode(extension.getDeviceLanguageCode());
         config.setScheduler(extension.getScheduler() != null ? APITestRunConfig.Scheduler.valueOf(extension.getScheduler()) : null);
+        if (extension.getMode() != null) {
+            logger.warn("TESTDROID: mode variable is not used anymore");
+        }
 
-        config.setMode(APITestRunConfig.Mode.valueOf(extension.getMode()));
         //App crawler settings
         config.setApplicationUsername(extension.getAppCrawlerConfig().getApplicationUserName());
         config.setApplicationPassword(extension.getAppCrawlerConfig().getApplicationPassword());
@@ -307,9 +296,8 @@ public class TestDroidServer extends TestServer {
         if (extension.getProjectName() == null) {
             logger.warn("TESTDROID: project name has not been set, creating a new project");
         }
-        if (extension.getMode() == null || APITestRunConfig.Mode.valueOf(extension.getMode()) == null) {
-            logger.warn("TESTDROID: Test run mode has not been set(default: FULL_RUN)");
-            extension.setMode(APITestRunConfig.Mode.FULL_RUN.name());
+        if (extension.getMode() != null) {
+            logger.warn("TESTDROID: mode variable is not used anymore");
         }
         if (extension.getDeviceGroup() == null) {
             logger.warn("TESTDROID: Device group has not been set");
