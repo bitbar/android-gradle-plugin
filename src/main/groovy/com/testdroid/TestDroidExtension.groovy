@@ -27,6 +27,7 @@ class TestDroidExtension {
     String apiKey
     String projectName
     String cloudUrl
+    @Deprecated
     String mode
     String deviceGroup
     String deviceLanguageCode
