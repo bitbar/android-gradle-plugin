@@ -20,21 +20,26 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.builder.testing.api.TestServer;
 import com.testdroid.api.*;
-import com.testdroid.api.model.*;
+import com.testdroid.api.model.APIDeviceGroup;
+import com.testdroid.api.model.APIProject;
+import com.testdroid.api.model.APITestRunConfig;
+import com.testdroid.api.model.APIUser;
 import org.apache.commons.lang.StringUtils;
 import org.apache.http.HttpHost;
+import org.gradle.api.InvalidUserDataException;
 import org.gradle.api.logging.Logger;
 
 import java.io.File;
 import java.util.List;
 
-import static com.testdroid.TestDroidExtension.Authorization.*;
+import static com.testdroid.TestDroidExtension.Authorization.APIKEY;
+import static com.testdroid.TestDroidExtension.Authorization.OAUTH2;
 
 public class TestDroidServer extends TestServer {
 
     private final TestDroidExtension extension;
     private final Logger logger;
-    private final String cloudURL = "https://cloud.testdroid.com";
+    private static final String CLOUD_URL = "https://cloud.testdroid.com";
 
     TestDroidServer(@NonNull TestDroidExtension extension,
                     @NonNull Logger logger) {
@@ -93,24 +98,21 @@ public class TestDroidServer extends TestServer {
     @Override
     public void uploadApks(@NonNull String variantName, @NonNull File testApk, @Nullable File testedApk) {
         APIUser user;
-        logger.info(String.format(
-                "TESTDROID: Variant(%s), Uploading APKs\n\t%s\n\t%s",
+        logger.info("TESTDROID: Variant({}), Uploading APKs\n\t{}\n\t{}",
                 variantName,
                 testApk.getAbsolutePath(),
-                testedApk != null ? testedApk.getAbsolutePath() : "<none>"));
-        String testdroidCloudURL = extension.getCloudUrl() == null ? cloudURL : extension.getCloudUrl();
-        logger.info("Testdroid URL %s", testdroidCloudURL);
+                testedApk != null ? testedApk.getAbsolutePath() : "<none>");
+        String testdroidCloudURL = extension.getCloudUrl() == null ? CLOUD_URL : extension.getCloudUrl();
+        logger.info("Testdroid URL {}", testdroidCloudURL);
 
         APIClient client = createAPIClient(testdroidCloudURL, extension.getAuthorization());
         if (client == null) {
-            logger.error("TESTDROID: Client couldn't be configured");
-            return;
+            throw new InvalidUserDataException("TESTDROID: Client couldn't be configured");
         }
         try {
             user = client.me();
         } catch (APIException e) {
-            logger.error("TESTDROID: Client couldn't connect", e);
-            return;
+            throw new InvalidUserDataException("TESTDROID: Client couldn't connect", e);
         }
 
         APIProject project;
@@ -125,8 +127,7 @@ public class TestDroidServer extends TestServer {
 
                 project = searchProject(extension.getProjectName(), projectList);
                 if (project == null) {
-                    logger.warn("TESTDROID: Can't find project " + extension.getProjectName());
-                    return;
+                    throw new InvalidUserDataException("TESTDROID: Can't find project " + extension.getProjectName());
                 }
 
             }
@@ -138,34 +139,28 @@ public class TestDroidServer extends TestServer {
             APIDeviceGroup deviceGroup = searchDeviceGroup(extension.getDeviceGroup(), deviceGroupsResource);
 
             if (deviceGroup == null) {
-                logger.warn("TESTDROID: Can't find device group " + extension.getDeviceGroup());
-                return;
+                throw new InvalidUserDataException("TESTDROID: Can't find device group " + extension.getDeviceGroup());
             } else if (deviceGroup.getDeviceCount() == 0) {
-                logger.warn("TESTDROID: There is no devices in group:" + extension.getDeviceGroup());
-                return;
+                throw new InvalidUserDataException("TESTDROID: There is no devices in group:" + extension.getDeviceGroup());
             }
 
-            APITestRunConfig config;
-            config = updateAPITestRunConfigValues(project, extension, deviceGroup.getId());
+            updateAPITestRunConfigValues(project, extension, deviceGroup.getId());
 
-            logger.info("TESTDROID: Uploading apks into project %s (id:%d)", project.getName(), project.getId());
+            logger.info("TESTDROID: Uploading apks into project {} (id:{})", project.getName(), project.getId());
             File instrumentationAPK = testApk;
 
             if (extension.getFullRunConfig() != null && extension.getFullRunConfig().getInstrumentationAPKPath() != null
                     && new File(extension.getFullRunConfig().getInstrumentationAPKPath()).exists()) {
 
                 instrumentationAPK = new File(extension.getFullRunConfig().getInstrumentationAPKPath());
-                logger.info("TESTDROID: Using custom path for instrumentation APK: %s", extension.getFullRunConfig().getInstrumentationAPKPath());
+                logger.info("TESTDROID: Using custom path for instrumentation APK: {}", extension.getFullRunConfig().getInstrumentationAPKPath());
             }
             uploadBinaries(project, instrumentationAPK, testedApk);
 
             project.run(extension.getTestRunName() == null ? variantName : extension.getTestRunName());
 
-        } catch (APIException e) {
-            logger.error("Can't upload project", e);
-            System.out.println(String.format(
-                    "TESTDROID: Uploading failed:%s", e.getStatus()));
-
+        } catch (APIException exc) {
+            throw new InvalidUserDataException("TESTDROID: Uploading failed", exc);
         }
 
     }
@@ -236,7 +231,6 @@ public class TestDroidServer extends TestServer {
             if (testApk != null && APIProject.Type.ANDROID == project.getType()) {
                 project.uploadTest(testApk, "application/octet-stream");
                 logger.info("TESTDROID: Android test uploaded");
-                return;
             }
         }
 
