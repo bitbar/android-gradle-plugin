@@ -6,3 +6,4 @@ repo
 build
 .gradle
 .idea
+local.properties
