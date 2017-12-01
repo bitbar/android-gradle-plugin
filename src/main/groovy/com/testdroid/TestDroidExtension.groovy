@@ -35,6 +35,9 @@ class TestDroidExtension {
     String scheduler // PARALLEL or SERIAL
     String testScreenshotDir
     String testRunName
+    String testRunId
+    String projectId
+
     Boolean useSystemProxySettings = Boolean.FALSE
     Authorization authorization = Authorization.OAUTH2
 

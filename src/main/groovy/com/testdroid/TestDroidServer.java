@@ -20,10 +20,7 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.builder.testing.api.TestServer;
 import com.testdroid.api.*;
-import com.testdroid.api.model.APIDeviceGroup;
-import com.testdroid.api.model.APIProject;
-import com.testdroid.api.model.APITestRunConfig;
-import com.testdroid.api.model.APIUser;
+import com.testdroid.api.model.*;
 import org.apache.commons.lang.StringUtils;
 import org.apache.http.HttpHost;
 import org.gradle.api.InvalidUserDataException;
@@ -157,7 +154,9 @@ public class TestDroidServer extends TestServer {
             }
             uploadBinaries(project, instrumentationAPK, testedApk);
 
-            project.run(extension.getTestRunName() == null ? variantName : extension.getTestRunName());
+            APITestRun apiTestRun = project.run(extension.getTestRunName() == null ? variantName : extension.getTestRunName());
+            extension.setTestRunId(String.valueOf(apiTestRun.getId()));
+            extension.setProjectId(String.valueOf(apiTestRun.getProjectId()));
 
         } catch (APIException exc) {
             throw new InvalidUserDataException("TESTDROID: Uploading failed", exc);
