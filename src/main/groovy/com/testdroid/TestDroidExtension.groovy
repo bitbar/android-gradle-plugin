@@ -27,8 +27,7 @@ class TestDroidExtension {
     String apiKey
     String projectName
     String cloudUrl
-    @Deprecated
-    String mode
+    Mode mode = Mode.FULL_RUN
     String deviceGroup
     String deviceLanguageCode
     String hookUrl
@@ -84,6 +83,12 @@ class TestDroidExtension {
     enum Authorization {
         APIKEY,
         OAUTH2
+    }
+
+    enum Mode {
+        APP_CRAWLER,
+        FULL_RUN,
+        UI_AUTOMATOR,
     }
 
 }
