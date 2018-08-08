@@ -6,4 +6,5 @@ repo
 build
 .gradle
 .idea
+!.idea/codeStyleSettings.xml
 local.properties

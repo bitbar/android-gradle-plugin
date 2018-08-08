@@ -19,7 +19,13 @@ package com.testdroid;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.builder.testing.api.TestServer;
-import com.testdroid.api.*;
+import com.testdroid.api.APIClient;
+import com.testdroid.api.APIException;
+import com.testdroid.api.APIKeyClient;
+import com.testdroid.api.DefaultAPIClient;
+import com.testdroid.api.dto.Context;
+import com.testdroid.api.filter.BooleanFilterEntry;
+import com.testdroid.api.filter.StringFilterEntry;
 import com.testdroid.api.model.*;
 import org.apache.commons.lang.StringUtils;
 import org.apache.http.HttpHost;
@@ -27,19 +33,30 @@ import org.gradle.api.InvalidUserDataException;
 import org.gradle.api.logging.Logger;
 
 import java.io.File;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import static com.testdroid.TestDroidExtension.Authorization.APIKEY;
 import static com.testdroid.TestDroidExtension.Authorization.OAUTH2;
+import static com.testdroid.api.dto.Operand.EQ;
+import static com.testdroid.api.model.APIFileConfig.Action.INSTALL;
+import static com.testdroid.api.model.APIFileConfig.Action.RUN_TEST;
+import static com.testdroid.api.model.APIProject.Type.ANDROID;
+import static com.testdroid.dao.repository.dto.MappingKey.*;
+import static java.lang.Boolean.TRUE;
+import static java.lang.Integer.MAX_VALUE;
+import static org.apache.commons.lang3.StringUtils.EMPTY;
 
 public class TestDroidServer extends TestServer {
 
     private final TestDroidExtension extension;
+
     private final Logger logger;
+
     private static final String CLOUD_URL = "https://cloud.testdroid.com";
 
-    TestDroidServer(@NonNull TestDroidExtension extension,
-                    @NonNull Logger logger) {
+    TestDroidServer(@NonNull TestDroidExtension extension, @NonNull Logger logger) {
         this.extension = extension;
         this.logger = logger;
     }
@@ -47,49 +64,6 @@ public class TestDroidServer extends TestServer {
     @Override
     public String getName() {
         return "testdroid";
-    }
-
-    private APIProject searchProject(String projectName, APIListResource<APIProject> projectList) throws APIException {
-        if (projectList == null || projectList.getTotal() == 0 || projectList.getEntity() == null ||
-                projectList.getEntity().getData() == null) {
-            return null;
-        }
-
-        do {
-
-            List<APIProject> projects = projectList.getEntity().getData();
-            for (APIProject project : projects) {
-                if (projectName.equals(project.getName())) {
-                    return project;
-                }
-            }
-
-            projectList = projectList.getNext();
-        } while (projectList != null);
-
-        return null;
-    }
-
-    private APIDeviceGroup searchDeviceGroup(String deviceGroupName, APIListResource<APIDeviceGroup> deviceGroupList) throws APIException {
-        if (deviceGroupList == null || deviceGroupList.getTotal() == 0 || deviceGroupList.getEntity() == null ||
-                deviceGroupList.getEntity().getData() == null) {
-
-            return null;
-        }
-
-        do {
-            List<APIDeviceGroup> deviceGroups = deviceGroupList.getEntity().getData();
-            for (APIDeviceGroup deviceGroup : deviceGroups) {
-
-                if (deviceGroupName.equals(deviceGroup.getDisplayName())) {
-                    return deviceGroup;
-                }
-            }
-
-            deviceGroupList = deviceGroupList.getNext();
-        } while (deviceGroupList != null);
-
-        return null;
     }
 
     @Override
@@ -116,47 +90,49 @@ public class TestDroidServer extends TestServer {
         try {
             if (extension.getProjectName() == null) {
                 logger.warn("TESTDROID: Project name is not set - creating a new one");
-                project = user.createProject(APIProject.Type.ANDROID);
+                project = user.createProject(ANDROID);
                 logger.info("TESTDROID: Created project:" + project.getName());
             } else {
-                APIListResource<APIProject> projectList;
-                projectList = user.getProjectsResource();
-
-                project = searchProject(extension.getProjectName(), projectList);
-                if (project == null) {
-                    throw new InvalidUserDataException("TESTDROID: Can't find project " + extension.getProjectName());
-                }
-
+                final Context<APIProject> context = new Context(APIProject.class, 0, MAX_VALUE, EMPTY, EMPTY);
+                context.addFilter(new StringFilterEntry(NAME, EQ, extension.getProjectName()));
+                project = user.getProjectsResource(context).getEntity().getData().stream().findFirst()
+                        .orElseThrow(() -> new InvalidUserDataException("TESTDROID: Can't find project " + extension
+                                .getProjectName()));
             }
-            //reload
-            project = user.getProject(project.getId());
             logger.info(project.getName());
 
-            APIListResource<APIDeviceGroup> deviceGroupsResource = user.getDeviceGroupsResource();
-            APIDeviceGroup deviceGroup = searchDeviceGroup(extension.getDeviceGroup(), deviceGroupsResource);
+            final Context<APIDeviceGroup> context = new Context(APIDeviceGroup.class, 0, MAX_VALUE, EMPTY, EMPTY);
+            context.setExtraParams(Collections.singletonMap(WITH_PUBLIC, TRUE));
+            context.addFilter(new StringFilterEntry(DISPLAY_NAME, EQ, extension.getDeviceGroup()));
 
-            if (deviceGroup == null) {
-                throw new InvalidUserDataException("TESTDROID: Can't find device group " + extension.getDeviceGroup());
-            } else if (deviceGroup.getDeviceCount() == 0) {
-                throw new InvalidUserDataException("TESTDROID: There is no devices in group:" + extension.getDeviceGroup());
+            APIDeviceGroup deviceGroup = user.getDeviceGroupsResource(context).getEntity().getData().stream()
+                    .findFirst()
+                    .orElseThrow(() -> new InvalidUserDataException("TESTDROID: Can't find device group " + extension
+                            .getDeviceGroup()));
+
+            if (deviceGroup.getDeviceCount() == 0) {
+                throw new InvalidUserDataException("TESTDROID: There is no devices in group:" + extension
+                        .getDeviceGroup());
             }
 
-            updateAPITestRunConfigValues(project, extension, deviceGroup.getId());
+            APITestRunConfig testRunConfig = project.getTestRunConfig();
+            updateAPITestRunConfigValues(user, testRunConfig, extension, deviceGroup.getId());
 
             logger.info("TESTDROID: Uploading apks into project {} (id:{})", project.getName(), project.getId());
             File instrumentationAPK = testApk;
 
-            if (extension.getFullRunConfig() != null && extension.getFullRunConfig().getInstrumentationAPKPath() != null
+            if (extension.getFullRunConfig().getInstrumentationAPKPath() != null
                     && new File(extension.getFullRunConfig().getInstrumentationAPKPath()).exists()) {
-
                 instrumentationAPK = new File(extension.getFullRunConfig().getInstrumentationAPKPath());
-                logger.info("TESTDROID: Using custom path for instrumentation APK: {}", extension.getFullRunConfig().getInstrumentationAPKPath());
+                logger.info("TESTDROID: Using custom path for instrumentation APK: {}", extension.getFullRunConfig()
+                        .getInstrumentationAPKPath());
             }
-            uploadBinaries(project, instrumentationAPK, testedApk);
-
-            APITestRun apiTestRun = project.run(extension.getTestRunName() == null ? variantName : extension.getTestRunName());
-            extension.setTestRunId(String.valueOf(apiTestRun.getId()));
-            extension.setProjectId(String.valueOf(apiTestRun.getProjectId()));
+            List<APIFileConfig> apiFileConfigs = uploadBinaries(user, instrumentationAPK, testedApk);
+            testRunConfig.setFiles(apiFileConfigs);
+            testRunConfig.setTestRunName(extension.getTestRunName() == null ? variantName : extension.getTestRunName());
+            APITestRun testRun = user.startTestRun(testRunConfig);
+            extension.setTestRunId(String.valueOf(testRun.getId()));
+            extension.setProjectId(String.valueOf(testRun.getProjectId()));
 
         } catch (APIException exc) {
             throw new InvalidUserDataException("TESTDROID: Uploading failed", exc);
@@ -178,13 +154,16 @@ public class TestDroidServer extends TestServer {
             case APIKEY_PROXY:
                 return new APIKeyClient(testdroidCloudURL, extension.getApiKey(), buildProxyHost(), false);
             case APIKEY_PROXY_CREDENTIALS:
-                return new APIKeyClient(testdroidCloudURL, extension.getApiKey(), buildProxyHost(), proxyUser, proxyPassword, false);
+                return new APIKeyClient(testdroidCloudURL, extension
+                        .getApiKey(), buildProxyHost(), proxyUser, proxyPassword, false);
             case OAUTH:
                 return new DefaultAPIClient(testdroidCloudURL, extension.getUsername(), extension.getPassword());
             case OAUTH_PROXY:
-                return new DefaultAPIClient(testdroidCloudURL, extension.getUsername(), extension.getPassword(), buildProxyHost(), false);
+                return new DefaultAPIClient(testdroidCloudURL, extension.getUsername(), extension
+                        .getPassword(), buildProxyHost(), false);
             case OAUTH_PROXY_CREDENTIALS:
-                return new DefaultAPIClient(testdroidCloudURL, extension.getUsername(), extension.getPassword(), buildProxyHost(), proxyUser, proxyPassword, false);
+                return new DefaultAPIClient(testdroidCloudURL, extension.getUsername(), extension
+                        .getPassword(), buildProxyHost(), proxyUser, proxyPassword, false);
             case UNSUPPORTED:
             default:
                 return null;
@@ -203,50 +182,54 @@ public class TestDroidServer extends TestServer {
         return new HttpHost(proxyHost, port);
     }
 
-    private void uploadBinaries(APIProject project, File testApk, File testedApk) throws APIException {
-
-        if (project.getType().equals(APIProject.Type.UIAUTOMATOR)) {
-
-            if (extension.getUiAutomatorTestConfig() == null || extension.getUiAutomatorTestConfig().getUiAutomatorJarPath() == null) {
-                throw new APIException("TESTDROID: Configure uiautomator settings");
-            }
-            File jarFile = new File(extension.getUiAutomatorTestConfig().getUiAutomatorJarPath());
-            if (!jarFile.exists()) {
-                throw new APIException("TESTDROID: Invalid uiAutomator jar file:" + jarFile.getAbsolutePath());
-            }
-            project.uploadTest(new File(extension.getUiAutomatorTestConfig().getUiAutomatorJarPath()), "application/octet-stream");
-            logger.info("TESTDROID: uiautomator file uploaded");
-            project.uploadApplication(testedApk, "application/octet-stream");
+    private List<APIFileConfig> uploadBinaries(APIUser user, File testApk, File testedApk)
+            throws APIException, InvalidUserDataException {
+        List<APIFileConfig> files = new ArrayList<>();
+        APIProjectJobConfig.Type type = resolveFrameworkType(extension);
+        if (testedApk != null && testedApk.exists()) {
+            files.add(new APIFileConfig(user.uploadFile(testedApk).getId(), INSTALL));
             logger.info("TESTDROID: Android application uploaded");
-        } else {
-
-            if (testedApk != null && testedApk.exists()) {
-                project.uploadApplication(testedApk, "application/octet-stream");
-                logger.info("TESTDROID: Android application uploaded");
-            } else {
-                logger.warn("TESTDROID: Target application has not been added - uploading only test apk ");
-            }
-
-            if (testApk != null && APIProject.Type.ANDROID == project.getType()) {
-                project.uploadTest(testApk, "application/octet-stream");
-                logger.info("TESTDROID: Android test uploaded");
-            }
         }
-
+        switch (type) {
+            case INSTATEST:
+                break;
+            case DEFAULT:
+                if (testApk != null && testApk.exists()) {
+                    files.add(new APIFileConfig(user.uploadFile(testApk).getId(), RUN_TEST));
+                    logger.info("TESTDROID: Android test uploaded");
+                }
+                break;
+            case UIAUTOMATOR:
+                if (extension.getUiAutomatorTestConfig().getUiAutomatorJarPath() == null) {
+                    throw new APIException("TESTDROID: Configure uiautomator settings");
+                }
+                File jarFile = new File(extension.getUiAutomatorTestConfig().getUiAutomatorJarPath());
+                if (jarFile.exists()) {
+                    files.add(new APIFileConfig(user.uploadFile(jarFile).getId(), RUN_TEST));
+                    logger.info("TESTDROID: uiautomator file uploaded");
+                } else {
+                    throw new InvalidUserDataException("TESTDROID: Invalid uiAutomator jar file:" + jarFile
+                            .getAbsolutePath());
+                }
+                break;
+            default:
+        }
+        return files;
     }
 
-
-
-    private APITestRunConfig updateAPITestRunConfigValues(APIProject project, TestDroidExtension extension, Long deviceGroupId) throws APIException {
-
-        APITestRunConfig config = project.getTestRunConfig();
+    private APITestRunConfig updateAPITestRunConfigValues(
+            APIUser user, APITestRunConfig config, TestDroidExtension extension, Long deviceGroupId)
+            throws APIException {
 
         config.setHookURL(extension.getHookUrl());
         config.setDeviceLanguageCode(extension.getDeviceLanguageCode());
-        config.setScheduler(extension.getScheduler() != null ? APITestRunConfig.Scheduler.valueOf(extension.getScheduler()) : null);
-        if (extension.getMode() != null) {
-            logger.warn("TESTDROID: mode variable is not used anymore");
+        if (extension.getScheduler() != null) {
+            config.setScheduler(APITestRunConfig.Scheduler.valueOf(extension.getScheduler()));
         }
+
+        APIProjectJobConfig.Type type = resolveFrameworkType(extension);
+        config.setFrameworkId(resolveFrameworkId(user, type));
+        config.setOsType(APIDevice.OsType.ANDROID);
 
         //App crawler settings
         config.setApplicationUsername(extension.getAppCrawlerConfig().getApplicationUserName());
@@ -254,7 +237,8 @@ public class TestDroidServer extends TestServer {
 
         //Full run settings
         if (extension.getFullRunConfig().getLimitationType() != null) {
-            config.setLimitationType(APITestRunConfig.LimitationType.valueOf(extension.getFullRunConfig().getLimitationType()));
+            config.setLimitationType(APITestRunConfig.LimitationType
+                    .valueOf(extension.getFullRunConfig().getLimitationType()));
             config.setLimitationValue(extension.getFullRunConfig().getLimitationValue());
         }
 
@@ -263,13 +247,36 @@ public class TestDroidServer extends TestServer {
         config.setScreenshotDir(extension.getTestScreenshotDir());
         config.setInstrumentationRunner(extension.getFullRunConfig().getInstrumentationRunner());
         config.setUsedDeviceGroupId(deviceGroupId);
+        //Reset as in Gradle Plugin we use only deviceGroups
+        config.setDeviceIds(null);
         //Ui automator settings
         config.setUiAutomatorTestClasses(extension.getUiAutomatorTestConfig().getUiAutomatorTestClasses());
-
-        config.update();
         return config;
 
+    }
 
+    private APIProjectJobConfig.Type resolveFrameworkType(TestDroidExtension extension) {
+        switch (extension.getMode()) {
+            case FULL_RUN:
+                return APIProjectJobConfig.Type.DEFAULT;
+            case UI_AUTOMATOR:
+                return APIProjectJobConfig.Type.UIAUTOMATOR;
+            case APP_CRAWLER:
+            default:
+                return APIProjectJobConfig.Type.INSTATEST;
+        }
+    }
+
+    private Long resolveFrameworkId(APIUser user, APIProjectJobConfig.Type type) throws APIException {
+        final Context<APIFramework> context = new Context(APIFramework.class, 0, MAX_VALUE, EMPTY, EMPTY);
+        context.addFilter(new StringFilterEntry(OS_TYPE, EQ, ANDROID.name()));
+        context.addFilter(new BooleanFilterEntry(FOR_PROJECTS, EQ, TRUE));
+        context.addFilter(new BooleanFilterEntry(CAN_RUN_FROM_UI, EQ, TRUE));
+        context.addFilter(new StringFilterEntry(TYPE, EQ, type.name()));
+        return user.getAvailableFrameworksResource(context).getEntity().getData().stream().findFirst()
+                .map(APIFramework::getId)
+                .orElseThrow(() -> new InvalidUserDataException("TESTDROID: Can't determinate framework for " +
+                        extension.getProjectName()));
     }
 
     @Override
@@ -288,9 +295,6 @@ public class TestDroidServer extends TestServer {
         }
         if (extension.getProjectName() == null) {
             logger.warn("TESTDROID: project name has not been set, creating a new project");
-        }
-        if (extension.getMode() != null) {
-            logger.warn("TESTDROID: mode variable is not used anymore");
         }
         if (extension.getDeviceGroup() == null) {
             logger.warn("TESTDROID: Device group has not been set");

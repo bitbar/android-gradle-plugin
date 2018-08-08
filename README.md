@@ -50,7 +50,7 @@ Below is listed all the supported configurations parameters:
 
         cloudUrl = 'https://cloud.testdroid.com'  //optional - default live
         projectName "Project 1"  //optional - default: create a new project
-        mode "FULL_RUN" //FULL_RUN / APP_CRAWLER / UI_AUTOMATOR - deprecated, mode is set based on project type
+        mode "FULL_RUN" //FULL_RUN / APP_CRAWLER / UI_AUTOMATOR
         testRunName "Custom test run name" //optional - default: build variant name
 
         deviceLanguageCode "en-US"    //optional - locale <ISO 63>_<ISO 3166> default: en-US
