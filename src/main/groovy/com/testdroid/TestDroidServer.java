@@ -36,6 +36,7 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 
 import static com.testdroid.TestDroidExtension.Authorization.APIKEY;
 import static com.testdroid.TestDroidExtension.Authorization.OAUTH2;
@@ -251,6 +252,7 @@ public class TestDroidServer extends TestServer {
         config.setDeviceIds(null);
         //Ui automator settings
         config.setUiAutomatorTestClasses(extension.getUiAutomatorTestConfig().getUiAutomatorTestClasses());
+        Optional.ofNullable(extension.getTimeout()).ifPresent(config::setTimeout);
         return config;
 
     }
