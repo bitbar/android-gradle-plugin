@@ -36,6 +36,7 @@ class TestDroidExtension {
     String testRunName
     String testRunId
     String projectId
+    Long frameworkId
     Long timeout;
 
     Boolean useSystemProxySettings = Boolean.FALSE

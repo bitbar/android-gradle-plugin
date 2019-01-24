@@ -8,7 +8,7 @@ A typical project build.gradle will look like this:
         }
         dependencies {
             classpath 'com.android.tools.build:gradle:2.3.0'
-            classpath 'com.testdroid:gradle:2.63.0'
+            classpath 'com.testdroid:gradle:2.63.1'
         }
     }
     
@@ -64,7 +64,9 @@ Below is listed all the supported configurations parameters:
         useSystemProxySettings true //optional - Use system proxy settings  default: true
         
         timeout 3600 //optional - test timeout, respected only for Customer with Plan
-    
+        
+        frameworkId // optional - customer test framework id
+        
         // AppCrawler configuration - set application credentials
         appCrawlerConfig{
             applicationPassword = "appPassword2"
