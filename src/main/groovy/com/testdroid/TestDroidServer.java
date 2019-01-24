@@ -229,7 +229,13 @@ public class TestDroidServer extends TestServer {
         }
 
         APIProjectJobConfig.Type type = resolveFrameworkType(extension);
-        config.setFrameworkId(resolveFrameworkId(user, type));
+
+        if(extension.getFrameworkId() != null) {
+            config.setFrameworkId(extension.getFrameworkId());
+        }
+        else {
+            config.setFrameworkId(resolveFrameworkId(user, type));
+        }
         config.setOsType(APIDevice.OsType.ANDROID);
 
         //App crawler settings
