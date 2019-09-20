@@ -48,12 +48,12 @@ Below is listed all the supported configurations parameters:
 
         deviceGroup "test group"
 
-        cloudUrl = 'https://cloud.testdroid.com'  //optional - default live
+        cloudUrl = 'https://cloud.bitbar.com'  //optional - default live
         projectName "Project 1"  //optional - default: create a new project
         mode "FULL_RUN" //FULL_RUN / APP_CRAWLER / UI_AUTOMATOR
         testRunName "Custom test run name" //optional - default: build variant name
 
-        deviceLanguageCode "en-US"    //optional - locale <ISO 63>_<ISO 3166> default: en-US
+        deviceLanguageCode "en_US"    //optional - locale <ISO 63>_<ISO 3166> default: en_US
     
         hookUrl "http://localhost:9080"   //optional - call back URL after test run has finished default: empty
     
@@ -81,12 +81,6 @@ Below is listed all the supported configurations parameters:
             limitationType = "CLASS"
             limitationValue = "foo.bar"
             instrumentationAPKPath = "/tmp/mytesti.apk" //optional - custom instrumentation apk path
-        }
-    
-          //optional
-        uiAutomatorTestConfig {
-            uiAutomatorTestClasses = "foo.class"
-            uiAutomatorJarPath = "tmp/uitests.jar"
         }
         
     }

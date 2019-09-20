@@ -8,3 +8,7 @@ build
 .idea
 !.idea/codeStyleSettings.xml
 local.properties
+
+/tests/gradle/
+/tests/gradlew
+tests/gradlew.bat
