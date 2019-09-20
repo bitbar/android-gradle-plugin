@@ -44,7 +44,6 @@ class TestDroidExtension {
 
     FullRunConfig fullRunConfig = new FullRunConfig()
     AppCrawlerConfig appCrawlerConfig = new AppCrawlerConfig()
-    UiAutomatorTestConfig uiAutomatorTestConfig = new UiAutomatorTestConfig()
 
     TestDroidExtension(Project project) {
         this.project = project
@@ -56,10 +55,6 @@ class TestDroidExtension {
 
     def fullRunConfig(Closure configureClosure) {
         ConfigureUtil.configure(configureClosure, this.fullRunConfig)
-    }
-
-    def uiAutomatorTestConfig(Closure configureClosure) {
-        ConfigureUtil.configure(configureClosure, this.uiAutomatorTestConfig)
     }
 
     class AppCrawlerConfig {
@@ -75,11 +70,6 @@ class TestDroidExtension {
         String limitationValue
         String instrumentationAPKPath
 
-    }
-
-    class UiAutomatorTestConfig {
-        String uiAutomatorTestClasses
-        String uiAutomatorJarPath
     }
 
     enum Authorization {
