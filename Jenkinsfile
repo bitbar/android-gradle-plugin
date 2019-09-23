@@ -4,7 +4,7 @@ node("gpg") {
             checkout([
                     $class           : 'GitSCM',
                     userRemoteConfigs: [[credentialsId: 'f652697e-beb7-4724-b1b5-4913a2bf45f5',
-                                         url : 'git@github.com:bitbar/testdroid-gradle-plugin.git']]
+                                         url : 'git@github.com:bitbar/android-gradle-plugin.git']]
             ])
         }
 
