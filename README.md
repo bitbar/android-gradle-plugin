@@ -8,7 +8,7 @@ A typical project build.gradle will look like this:
         }
         dependencies {
             classpath 'com.android.tools.build:gradle:2.3.0'
-            classpath 'com.testdroid:gradle:2.63.1'
+            classpath 'com.testdroid:gradle:2.81.0'
         }
     }
     
