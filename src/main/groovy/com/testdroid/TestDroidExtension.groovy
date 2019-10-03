@@ -79,8 +79,7 @@ class TestDroidExtension {
 
     enum Mode {
         APP_CRAWLER,
-        FULL_RUN,
-        UI_AUTOMATOR,
+        FULL_RUN
     }
 
 }

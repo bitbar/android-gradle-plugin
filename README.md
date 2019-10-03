@@ -50,7 +50,7 @@ Below is listed all the supported configurations parameters:
 
         cloudUrl = 'https://cloud.bitbar.com'  //optional - default live
         projectName "Project 1"  //optional - default: create a new project
-        mode "FULL_RUN" //FULL_RUN / APP_CRAWLER / UI_AUTOMATOR
+        mode "FULL_RUN" //FULL_RUN / APP_CRAWLER
         testRunName "Custom test run name" //optional - default: build variant name
 
         deviceLanguageCode "en_US"    //optional - locale <ISO 63>_<ISO 3166> default: en_US
