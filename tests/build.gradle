@@ -26,7 +26,7 @@ testdroid {
     password "password"
     //cloudUrl = 'https://cloud.bitbar.com'  //optional - default live
     projectName "Project 1"  //optional - default: create a new project
-    mode "FULL_RUN" //FULL_RUN / APP_CRAWLER / UIAUTOMATOR
+    mode "FULL_RUN" //FULL_RUN / APP_CRAWLER
 
     deviceGroup "my device group"
     //testRunName "Custom test run name" //optional - default: build variant name
