@@ -36,7 +36,6 @@ class TestDroidPlugin implements Plugin<Project> {
 
         extension = project.extensions.create(PLUGIN_NAME, TestDroidExtension, project)
 
-        project.android.testServer(
-                new TestDroidServer(extension, project.android.logger))
+        project.android.testServer(new TestDroidServer(extension, project.android.logger))
     }
 }

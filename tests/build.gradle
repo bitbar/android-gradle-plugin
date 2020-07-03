@@ -17,9 +17,7 @@ apply plugin: 'testdroid'
 android {
     compileSdkVersion 15
     buildToolsVersion "19.1.0"
-
 }
-
 
 testdroid {
     username  "demo@localhost"
@@ -27,6 +25,7 @@ testdroid {
     //cloudUrl = 'https://cloud.bitbar.com'  //optional - default live
     projectName "Project 1"  //optional - default: create a new project
     mode "FULL_RUN" //FULL_RUN / APP_CRAWLER
+    //virusScanTimeout 300000 // optional - timeout for waiting on virus scan (in ms)
 
     deviceGroup "my device group"
     //testRunName "Custom test run name" //optional - default: build variant name

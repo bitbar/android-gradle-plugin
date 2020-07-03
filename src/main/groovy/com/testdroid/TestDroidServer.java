@@ -24,11 +24,10 @@ import com.testdroid.api.APIException;
 import com.testdroid.api.APIKeyClient;
 import com.testdroid.api.DefaultAPIClient;
 import com.testdroid.api.dto.Context;
-import com.testdroid.api.filter.BooleanFilterEntry;
-import com.testdroid.api.filter.StringFilterEntry;
+import com.testdroid.api.filter.FilterEntry;
 import com.testdroid.api.model.*;
 import org.apache.commons.collections4.multimap.HashSetValuedHashMap;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpHost;
 import org.gradle.api.InvalidUserDataException;
 import org.gradle.api.logging.Logger;
@@ -44,7 +43,7 @@ import static com.testdroid.api.dto.MappingKey.*;
 import static com.testdroid.api.dto.Operand.EQ;
 import static com.testdroid.api.model.APIFileConfig.Action.INSTALL;
 import static com.testdroid.api.model.APIFileConfig.Action.RUN_TEST;
-import static com.testdroid.api.model.APIProject.Type.ANDROID;
+import static com.testdroid.api.model.APIDevice.OsType.ANDROID;
 import static java.lang.Boolean.TRUE;
 import static java.lang.Integer.MAX_VALUE;
 import static org.apache.commons.lang3.StringUtils.*;
@@ -91,7 +90,7 @@ public class TestDroidServer extends TestServer {
             HashSetValuedHashMap<String, Object> extraParams = new HashSetValuedHashMap<>();
             extraParams.put(WITH_PUBLIC, TRUE);
             context.setExtraParams(extraParams);
-            context.addFilter(new StringFilterEntry(DISPLAY_NAME, EQ, extension.getDeviceGroup()));
+            context.addFilter(new FilterEntry(DISPLAY_NAME, EQ, extension.getDeviceGroup()));
 
             APIDeviceGroup deviceGroup = user.getDeviceGroupsResource(context).getEntity().getData().stream()
                     .findFirst()
@@ -121,21 +120,22 @@ public class TestDroidServer extends TestServer {
                 logger.info("TESTDROID: Using custom path for instrumentation APK: {}", extension.getFullRunConfig()
                         .getInstrumentationAPKPath());
             }
-            List<APIFileConfig> apiFileConfigs = uploadBinaries(user, instrumentationAPK, testedApk);
+            List<APIFileConfig> apiFileConfigs = uploadBinaries(user, instrumentationAPK, testedApk,
+                    extension.getVirusScanTimeout());
             testRunConfig.setFiles(apiFileConfigs);
             testRunConfig.setTestRunName(extension.getTestRunName() == null ? variantName : extension.getTestRunName());
             APITestRun testRun = user.startTestRun(testRunConfig);
             extension.setTestRunId(String.valueOf(testRun.getId()));
             extension.setProjectId(String.valueOf(testRun.getProjectId()));
 
-        } catch (APIException exc) {
+        } catch (APIException | InterruptedException exc) {
             throw new InvalidUserDataException("TESTDROID: Uploading failed", exc);
         }
     }
 
     private APIProject findProject(APIUser user, String projectName) throws APIException{
         final Context<APIProject> context = new Context<>(APIProject.class, 0, MAX_VALUE, EMPTY, EMPTY);
-        context.addFilter(new StringFilterEntry(NAME, EQ, projectName));
+        context.addFilter(new FilterEntry(NAME, EQ, projectName));
         return user.getProjectsResource(context).getEntity().getData().stream().findFirst()
                 .orElseThrow(() -> new InvalidUserDataException("TESTDROID: Can't find project " + projectName));
     }
@@ -182,26 +182,32 @@ public class TestDroidServer extends TestServer {
         return new HttpHost(proxyHost, port);
     }
 
-    private List<APIFileConfig> uploadBinaries(APIUser user, File testApk, File testedApk)
-            throws APIException, InvalidUserDataException {
-        List<APIFileConfig> files = new ArrayList<>();
-        APIProjectJobConfig.Type type = resolveFrameworkType(extension);
+    private List<APIFileConfig> uploadBinaries(APIUser user, File testApk, File testedApk, Long virusScanTimeout)
+            throws APIException, InvalidUserDataException, InterruptedException {
+        List<APIFileConfig> fileConfigs = new ArrayList<>();
+        List<APIUserFile> files = new ArrayList<>();
         if (testedApk != null && testedApk.exists()) {
-            files.add(new APIFileConfig(user.uploadFile(testedApk).getId(), INSTALL));
+            fileConfigs.add(uploadFile(user, testedApk, files, INSTALL));
             logger.info("TESTDROID: Android application uploaded");
         }
-        switch (type) {
-            case INSTATEST:
-                break;
-            case DEFAULT:
-                if (testApk != null && testApk.exists()) {
-                    files.add(new APIFileConfig(user.uploadFile(testApk).getId(), RUN_TEST));
-                    logger.info("TESTDROID: Android test uploaded");
-                }
-                break;
-            default:
+        if (extension.getMode() == TestDroidExtension.Mode.FULL_RUN && testApk != null && testApk.exists()) {
+            fileConfigs.add(uploadFile(user, testApk, files, RUN_TEST));
+            logger.info("TESTDROID: Android test uploaded");
         }
-        return files;
+        if (virusScanTimeout == null) {
+            APIUserFile.waitForVirusScans(files.toArray(new APIUserFile[0]));
+        } else {
+            APIUserFile.waitForVirusScans(virusScanTimeout, files.toArray(new APIUserFile[0]));
+        }
+        return fileConfigs;
+    }
+
+    private APIFileConfig uploadFile(
+            APIUser user, File file, List<APIUserFile> uploadedFiles, APIFileConfig.Action action)
+            throws APIException {
+        APIUserFile apiFile = user.uploadFile(file);
+        uploadedFiles.add(apiFile);
+        return new APIFileConfig(apiFile.getId(), action);
     }
 
     private void updateAPITestRunConfigValues(
@@ -214,15 +220,12 @@ public class TestDroidServer extends TestServer {
             config.setScheduler(APITestRunConfig.Scheduler.valueOf(extension.getScheduler()));
         }
 
-        APIProjectJobConfig.Type type = resolveFrameworkType(extension);
-
-        if(extension.getFrameworkId() != null) {
+        if (extension.getFrameworkId() != null) {
             config.setFrameworkId(extension.getFrameworkId());
+        } else {
+            config.setFrameworkId(resolveFrameworkId(user));
         }
-        else {
-            config.setFrameworkId(resolveFrameworkId(user, type));
-        }
-        config.setOsType(APIDevice.OsType.ANDROID);
+        config.setOsType(ANDROID);
 
         //App crawler settings
         config.setApplicationUsername(extension.getAppCrawlerConfig().getApplicationUserName());
@@ -245,22 +248,11 @@ public class TestDroidServer extends TestServer {
         Optional.ofNullable(extension.getTimeout()).ifPresent(config::setTimeout);
     }
 
-    private APIProjectJobConfig.Type resolveFrameworkType(TestDroidExtension extension) {
-        switch (extension.getMode()) {
-            case FULL_RUN:
-                return APIProjectJobConfig.Type.DEFAULT;
-            case APP_CRAWLER:
-            default:
-                return APIProjectJobConfig.Type.INSTATEST;
-        }
-    }
-
-    private Long resolveFrameworkId(APIUser user, APIProjectJobConfig.Type type) throws APIException {
+    private Long resolveFrameworkId(APIUser user) throws APIException {
         final Context<APIFramework> context = new Context<>(APIFramework.class, 0, MAX_VALUE, EMPTY, EMPTY);
-        context.addFilter(new StringFilterEntry(OS_TYPE, EQ, ANDROID.name()));
-        context.addFilter(new BooleanFilterEntry(FOR_PROJECTS, EQ, TRUE));
-        context.addFilter(new BooleanFilterEntry(CAN_RUN_FROM_UI, EQ, TRUE));
-        context.addFilter(new StringFilterEntry(TYPE, EQ, type.name()));
+        context.addFilter(new FilterEntry(OS_TYPE, EQ, ANDROID.name()));
+        context.addFilter(new FilterEntry(FOR_PROJECTS, EQ, TRUE));
+        context.addFilter(new FilterEntry(CAN_RUN_FROM_UI, EQ, TRUE));
         return user.getAvailableFrameworksResource(context).getEntity().getData().stream().findFirst()
                 .map(APIFramework::getId)
                 .orElseThrow(() -> new InvalidUserDataException("TESTDROID: Can't determinate framework for " +
