@@ -37,7 +37,8 @@ class TestDroidExtension {
     String testRunId
     String projectId
     Long frameworkId
-    Long timeout;
+    Long timeout
+    Long virusScanTimeout
 
     Boolean useSystemProxySettings = Boolean.FALSE
     Authorization authorization = Authorization.OAUTH2

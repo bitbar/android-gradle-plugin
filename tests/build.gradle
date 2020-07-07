@@ -6,8 +6,8 @@ buildscript {
         maven { url '../repo' }
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:1.1.0'
-        classpath 'com.testdroid:gradle:2.81.0'
+        classpath 'com.android.tools.build:gradle:2.3.0'
+        classpath 'com.testdroid:gradle:2.100.0'
     }
 }
 
@@ -16,44 +16,14 @@ apply plugin: 'testdroid'
 
 android {
     compileSdkVersion 15
-    buildToolsVersion "19.1.0"
-
+    buildToolsVersion "29.0.3"
 }
-
 
 testdroid {
     username  "demo@localhost"
     password "password"
-    //cloudUrl = 'https://cloud.bitbar.com'  //optional - default live
-    projectName "Project 1"  //optional - default: create a new project
-    mode "FULL_RUN" //FULL_RUN / APP_CRAWLER
-
-    deviceGroup "my device group"
-    //testRunName "Custom test run name" //optional - default: build variant name
-    //deviceLanguageCode "En-en"    //optional - locale <ISO 63>_<ISO 3166> default: En-en
-
-    //hookUrl "http://localhost:9080"   //optional - call back URL after test run has finished default: empty
-
-    //scheduler "PARALLEL" // optional - PARALLEL or SERIAL default: PARALLEL
-
-    //testScreenshotDir = "/sdcard/abc"  //optional - custom screenshot folder  default: /sdcard/test-screenshots
-
-    // AppCrawler configuration - set application credentials
-
-    //appCrawlerConfig{
-    //    applicationPassword = "appPassword2"
-    //    applicationUserName = "appUsername2"
-    //}
-
-    // optional - Custom settings for test execution
-
-    //  fullRunConfig {
-    //        instrumentationRunner =  "com.android.testRunner"
-    //        withAnnotation = "com.my.annotation"
-    //        withOutAnnotation = "com.my.not.annotation"
-    //        limitationType = "CLASS"
-    //        limitationValue = "foo.bar"
-    //        instrumentationAPKPath = "/tmp/mytesti.apk"
-    //  }
-
+    cloudUrl = 'https://cloud.bitbar.com'
+    projectName "Project 1"
+    mode "FULL_RUN"
+    frameworkId 252
 }

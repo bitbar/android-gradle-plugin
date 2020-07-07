@@ -8,7 +8,7 @@ A typical project build.gradle will look like this:
         }
         dependencies {
             classpath 'com.android.tools.build:gradle:2.3.0'
-            classpath 'com.testdroid:gradle:2.81.0'
+            classpath 'com.testdroid:gradle:2.100.0'
         }
     }
     
@@ -23,7 +23,8 @@ A typical project build.gradle will look like this:
         username 'testdroid@testdroid.com'
         password 'testdroid'
         deviceGroup 'My Devices'
-        mode "FULL_RUN"
+        mode "FULL_RUN"        
+        frameworkId 252
     }
 
 
@@ -32,7 +33,6 @@ are uploaded into Testdroid and test run is launched using device from group 'My
 
 To launch test run from command line use testdroidUpload task:
 >./gradlew testdroidUpload
-
 
 You can fully control your testrun using the same configurations options which are available via Testdroid web UI.
 
@@ -51,6 +51,7 @@ Below is listed all the supported configurations parameters:
         cloudUrl = 'https://cloud.bitbar.com'  //optional - default live
         projectName "Project 1"  //optional - default: create a new project
         mode "FULL_RUN" //FULL_RUN / APP_CRAWLER
+        frameworkId // customer test framework id
         testRunName "Custom test run name" //optional - default: build variant name
 
         deviceLanguageCode "en_US"    //optional - locale <ISO 63>_<ISO 3166> default: en_US
@@ -65,7 +66,7 @@ Below is listed all the supported configurations parameters:
         
         timeout 3600 //optional - test timeout, respected only for Customer with Plan
         
-        frameworkId // optional - customer test framework id
+        virusScanTimeout 300000 // optional - timeout for waiting on virus scan (in ms)
         
         // AppCrawler configuration - set application credentials
         appCrawlerConfig{
