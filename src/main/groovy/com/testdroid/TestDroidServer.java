@@ -93,6 +93,7 @@ public class TestDroidServer extends TestServer {
             context.addFilter(new FilterEntry(DISPLAY_NAME, EQ, extension.getDeviceGroup()));
 
             APIDeviceGroup deviceGroup = user.getDeviceGroupsResource(context).getEntity().getData().stream()
+                    .filter(apiDeviceGroup -> apiDeviceGroup.getDisplayName().equals(extension.getDeviceGroup()))
                     .findFirst()
                     .orElseThrow(() -> new InvalidUserDataException("TESTDROID: Can't find device group " + extension
                             .getDeviceGroup()));
