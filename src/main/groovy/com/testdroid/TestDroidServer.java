@@ -137,7 +137,9 @@ public class TestDroidServer extends TestServer {
     private APIProject findProject(APIUser user, String projectName) throws APIException{
         final Context<APIProject> context = new Context<>(APIProject.class, 0, MAX_VALUE, EMPTY, EMPTY);
         context.addFilter(new FilterEntry(NAME, EQ, projectName));
-        return user.getProjectsResource(context).getEntity().getData().stream().findFirst()
+        return user.getProjectsResource(context).getEntity().getData().stream()
+                .filter(project -> project.getName().equals(projectName))
+                .findFirst()
                 .orElseThrow(() -> new InvalidUserDataException("TESTDROID: Can't find project " + projectName));
     }
 
