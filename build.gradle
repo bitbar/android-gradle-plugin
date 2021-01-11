@@ -19,9 +19,11 @@ dependencies {
     groovy localGroovy()
 
     compile 'com.android.tools.build:builder-test-api:2.3.0'
+    compile 'com.android.tools:annotations:25.3.0'
     compile 'com.testdroid:testdroid-api:2.100'
     testCompile 'junit:junit:4.12'
     testCompile 'com.android.tools.build:gradle:2.3.0'
+    testCompile 'com.android.tools.build:gradle-core:2.3.0'
 }
 
 group = 'com.testdroid'
@@ -39,7 +41,7 @@ gradlePlugin {
 
 // custom tasks for creating source/javadoc jars
 task sourcesJar(type: Jar, dependsOn:classes) {
-    classifier = 'sources'
+    archiveClassifier.set('sources')
     from sourceSets.main.allSource
 }
 
