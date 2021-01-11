@@ -93,6 +93,7 @@ public class TestDroidServer extends TestServer {
             context.addFilter(new FilterEntry(DISPLAY_NAME, EQ, extension.getDeviceGroup()));
 
             APIDeviceGroup deviceGroup = user.getDeviceGroupsResource(context).getEntity().getData().stream()
+                    .filter(apiDeviceGroup -> apiDeviceGroup.getDisplayName().equals(extension.getDeviceGroup()))
                     .findFirst()
                     .orElseThrow(() -> new InvalidUserDataException("TESTDROID: Can't find device group " + extension
                             .getDeviceGroup()));
@@ -136,7 +137,9 @@ public class TestDroidServer extends TestServer {
     private APIProject findProject(APIUser user, String projectName) throws APIException{
         final Context<APIProject> context = new Context<>(APIProject.class, 0, MAX_VALUE, EMPTY, EMPTY);
         context.addFilter(new FilterEntry(NAME, EQ, projectName));
-        return user.getProjectsResource(context).getEntity().getData().stream().findFirst()
+        return user.getProjectsResource(context).getEntity().getData().stream()
+                .filter(project -> project.getName().equals(projectName))
+                .findFirst()
                 .orElseThrow(() -> new InvalidUserDataException("TESTDROID: Can't find project " + projectName));
     }
 
