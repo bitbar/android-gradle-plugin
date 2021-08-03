@@ -20,7 +20,7 @@ dependencies {
 
     compile 'com.android.tools.build:builder-test-api:2.3.0'
     compile 'com.android.tools:annotations:25.3.0'
-    compile 'com.testdroid:testdroid-api:2.100'
+    compile 'com.testdroid:testdroid-api:2.125'
     testCompile 'junit:junit:4.12'
     testCompile 'com.android.tools.build:gradle:2.3.0'
     testCompile 'com.android.tools.build:gradle-core:2.3.0'
@@ -28,7 +28,7 @@ dependencies {
 
 group = 'com.testdroid'
 archivesBaseName = 'gradle'
-version = '2.100.1'
+version = '2.125.0'
 
 gradlePlugin {
     plugins {
