@@ -1,11 +1,16 @@
 apply plugin: 'groovy'
 apply plugin: 'idea'
-apply plugin: 'maven'
+apply plugin: 'maven-publish'
 apply plugin: 'signing'
 apply plugin: 'java-gradle-plugin'
 
+project.group = GROUP_ID
+project.archivesBaseName = ARTIFACT_ID
+project.version = VERSION_NAME
+
 repositories {
     mavenCentral()
+    google()
 }
 
 configurations {
@@ -18,45 +23,70 @@ dependencies {
     gradleApi gradleApi()
     groovy localGroovy()
 
-    compile 'com.android.tools.build:builder-test-api:2.3.0'
-    compile 'com.android.tools:annotations:25.3.0'
-    compile 'com.testdroid:testdroid-api:2.134.1'
-    testCompile 'junit:junit:4.12'
-    testCompile 'com.android.tools.build:gradle:2.3.0'
-    testCompile 'com.android.tools.build:gradle-core:2.3.0'
-}
+    implementation 'com.android.tools.build:builder-test-api:7.2.1'
+    implementation 'com.android.tools:annotations:30.2.1'
+    implementation 'com.testdroid:testdroid-api:3.0'
+    implementation 'com.google.guava:guava:31.1-jre'
+    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.8.2'
+    testImplementation 'org.junit.jupiter:junit-jupiter-engine:5.8.2'
+    testImplementation 'org.junit.jupiter:junit-jupiter-params:5.8.2'
+    testImplementation 'com.android.tools.build:gradle:7.2.1'
+    testImplementation 'com.android.tools.build:gradle-core:3.1.4'
 
-group = 'com.testdroid'
-archivesBaseName = 'gradle'
-version = '2.134.0'
+    // force newer versions due to security issues in builder-test-api:7.2.1
+    implementation 'com.google.protobuf:protobuf-java:3.21.2'
+
+    // force newer versions due to security issues in gradle:7.2.1:
+    testImplementation 'org.bouncycastle:bcprov-jdk15on:1.70'
+    testImplementation 'io.netty:netty-codec-http:4.1.78.Final'
+    testImplementation 'io.netty:netty-codec-http2:4.1.78.Final'
+    testImplementation 'com.google.code.gson:gson:2.9.0'
+    testImplementation 'commons-io:commons-io:2.11.0'
+    testImplementation 'org.apache.commons:commons-compress:1.21'
+    testImplementation 'org.jsoup:jsoup:1.15.1'
+    testImplementation 'org.jdom:jdom2:2.0.6.1'
+    testImplementation 'xerces:xercesImpl:2.12.2'
+    testImplementation 'com.google.crypto.tink:tink:1.6.1'
+
+    // force newer versions due to security issues in gradle-core:3.1.4:
+    testImplementation 'org.jetbrains.kotlin:kotlin-stdlib:1.7.0'
+    testImplementation 'org.jetbrains.kotlin:kotlin-reflect:1.7.0'
+
+}
 
 gradlePlugin {
     plugins {
         testdroid {
             id = 'testdroid'
             implementationClass = 'com.testdroid.TestDroidPlugin'
+
         }
     }
 }
 
 // custom tasks for creating source/javadoc jars
-task sourcesJar(type: Jar, dependsOn:classes) {
+task sourcesJar(type: Jar, dependsOn: classes) {
     archiveClassifier.set('sources')
     from sourceSets.main.allSource
 }
 
 javadoc {
-    exclude               "**/internal/**"
-    options.memberLevel = org.gradle.external.javadoc.JavadocMemberLevel.PROTECTED
+    exclude "**/internal/**"
+    options.memberLevel = JavadocMemberLevel.PROTECTED
 
-    title                 "Testdroid"
+    title "Testdroid"
 }
 
-task javadocJar(type: Jar, dependsOn:javadoc) {
-    classifier         'javadoc'
-    from               javadoc.destinationDir
+java {
+    sourceCompatibility = JavaVersion.VERSION_1_8
+    targetCompatibility = JavaVersion.VERSION_1_8
 }
- 
+
+task javadocJar(type: Jar, dependsOn: javadoc) {
+    classifier 'javadoc'
+    from javadoc.destinationDir
+}
+
 // add javadoc/source jar tasks as artifacts
 artifacts {
     archives jar
@@ -64,58 +94,58 @@ artifacts {
     archives javadocJar
 }
 
-task publishLocal(type: Upload) {
-    configuration = configurations.archives
-    repositories {
-        mavenDeployer {
-            repository(url: uri('repo'))
-        }
-    }
-}
-
 project.ext.sonatypeUsername = hasProperty('sonatypeUsername') ? sonatypeUsername : ""
 project.ext.sonatypePassword = hasProperty('sonatypePassword') ? sonatypePassword : ""
 
-uploadArchives {
-    repositories {
-        mavenDeployer {
-            beforeDeployment { MavenDeployment deployment ->
-                if (project.ext.sonatypeUsername.length() == 0 || project.ext.sonatypePassword.length() == 0) {
-                    throw new StopExecutionException("uploadArchives cannot be called without sonatype username and password")
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            artifact sourcesJar
+            artifact javadocJar
+            from components.java
+
+            groupId = GROUP_ID
+            artifactId = ARTIFACT_ID
+            version = VERSION_NAME
+
+            pom {
+                name = POM_NAME
+                description = POM_DESCRIPTION
+                url = POM_URL
+
+                scm {
+                    url = POM_SCM_URL
+                    connection = POM_SCM_CONNECTION
+                    developerConnection = POM_SCM_DEVELOPER_CONNECTION
                 }
-
-                signing.signPom(deployment)
-            }
-
-            repository(url: "https://oss.sonatype.org/service/local/staging/deploy/maven2/") {
-                authentication(userName: project.ext.sonatypeUsername, password: project.ext.sonatypePassword)
-            }
-
-            pom.project {
-                name 'Testdroid Plugin for Android'
-                description 'Adds support for deploying Android application to testdroid.com from the Android build system.'
-                url 'http://www.testdroid.com'
-                inceptionYear '2013'
 
                 licenses {
                     license {
-                        name 'The Apache Software License, Version 2.0'
-                        url 'http://www.apache.org/licenses/LICENSE-2.0.txt'
-                        distribution 'repo'
+                        name = POM_LICENSE_NAME
+                        url = POM_LICENSE_URL
+                        distribution = POM_LICENSE_DSITRIBUTIION
                     }
                 }
 
-                scm {
-                    url "https://github.com/bitbar/android-gradle-plugin.git"
-                    connection "git://github.com/bitbar/android-gradle-plugin.git"
-                    developerConnection 'scm:git@github.com:bitbar/android-gradle-plugin.git'
-
-                }
                 developers {
                     developer {
-                        name 'Sakari Rautiainen'
+                        name = 'Sakari Rautiainen'
                     }
                 }
+                scm {
+                    url = POM_SCM_URL
+                    connection = POM_SCM_CONNECTION
+                    developerConnection = POM_SCM_DEVELOPER_CONNECTION
+                }
+            }
+        }
+    }
+    repositories {
+        maven {
+            url = 'https://oss.sonatype.org/service/local/staging/deploy/maven2/'
+            credentials {
+                username = project.ext.sonatypeUsername
+                password = project.ext.sonatypePassword
             }
         }
     }
@@ -123,5 +153,5 @@ uploadArchives {
 
 signing {
     required { gradle.taskGraph.hasTask("uploadArchives") }
-    sign configurations.archives
+    sign publishing.publications.mavenJava
 }
