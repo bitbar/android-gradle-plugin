@@ -1,29 +1,9 @@
-buildscript {
-    repositories {
-        mavenCentral()
-        mavenLocal()
-        // repository with the output of the testdroid plugin build
-        maven { url '../repo' }
-    }
-    dependencies {
-        classpath 'com.android.tools.build:gradle:2.3.0'
-        classpath 'com.testdroid:gradle:2.100.0'
-    }
+// Top-level build file where you can add configuration options common to all sub-projects/modules.
+plugins {
+    id 'com.android.application' version '7.2.1' apply false
+    id 'com.android.library' version '7.2.1' apply false
 }
 
-apply plugin: 'android'
-apply plugin: 'testdroid'
-
-android {
-    compileSdkVersion 15
-    buildToolsVersion "29.0.3"
-}
-
-testdroid {
-    username  "demo@localhost"
-    password "password"
-    cloudUrl = 'https://cloud.bitbar.com'
-    projectName "Project 1"
-    mode "FULL_RUN"
-    frameworkId 252
+task clean(type: Delete) {
+    delete rootProject.buildDir
 }

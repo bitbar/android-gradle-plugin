@@ -2,39 +2,65 @@ Gradle plugin to deploys apks to Testdroid's online devices
 
 A typical project build.gradle will look like this:
 
-    buildscript {
-        repositories {
-            mavenCentral()
+    plugins {
+        id 'com.android.application'
+        id 'testdroid' version '3.0' apply true
+    }
+
+    android {
+        compileSdk 32
+
+        defaultConfig {
+            applicationId "com.example.myapplication"
+            minSdk 21
+            targetSdk 32
+            versionCode 1
+            versionName "1.0"
+
+            testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         }
-        dependencies {
-            classpath 'com.android.tools.build:gradle:2.3.0'
-            classpath 'com.testdroid:gradle:2.100.0'
+
+        buildTypes {
+            release {
+                minifyEnabled false
+                proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            }
+        }
+        compileOptions {
+            sourceCompatibility JavaVersion.VERSION_1_8
+            targetCompatibility JavaVersion.VERSION_1_8
         }
     }
     
-    apply plugin: 'android'
-    apply plugin: 'testdroid'
-    
-    android {
-        //...
+    dependencies {
+        implementation 'androidx.appcompat:appcompat:1.3.0'
+        implementation 'com.google.android.material:material:1.4.0'
+        implementation 'androidx.constraintlayout:constraintlayout:2.0.4'
+        testImplementation 'junit:junit:4.13.2'
+        androidTestImplementation 'androidx.test.ext:junit:1.1.3'
+        androidTestImplementation 'androidx.test.espresso:espresso-core:3.4.0'
     }
     
     testdroid {
-        username 'testdroid@testdroid.com'
-        password 'testdroid'
-        deviceGroup 'My Devices'
-        mode "FULL_RUN"        
+        username  "demo@localhost"
+        password "password"
+        cloudUrl = 'https://cloud.bitbar.com'
+        projectName "Project 1"
+        mode "FULL_RUN"
+        scheduler "SINGLE"
         frameworkId 252
+        deviceGroup 'My devices'
     }
 
 
+
 With above configuration your application and instrumentation package 
-are uploaded into Testdroid and test run is launched using device from group 'My Devices'
+are uploaded into BitBar Cloud and test run is launched using device from group 'My Devices'
 
 To launch test run from command line use testdroidUpload task:
 >./gradlew testdroidUpload
 
-You can fully control your testrun using the same configurations options which are available via Testdroid web UI.
+You can fully control your testrun using the same configurations options which are available via BitBar Cloud web UI.
 
 Below is listed all the supported configurations parameters:
 
@@ -85,6 +111,3 @@ Below is listed all the supported configurations parameters:
         }
         
     }
-
-
-

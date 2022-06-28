@@ -17,7 +17,7 @@ node("gpg") {
         stage("deploy") {                 
             withCredentials([usernamePassword(credentialsId:'b06e9466-56dc-4bdd-8fa7-d5c3112c937a', 
             passwordVariable: 'osspasswd', usernameVariable: 'ossusername')]) {
-                sh "./gradlew -PsonatypeUsername=$ossusername -PsonatypePassword=$osspasswd uploadArchives"
+                sh "./gradlew -PsonatypeUsername=$ossusername -PsonatypePassword=$osspasswd publishMavenJavaPublicationToMavenRepository"
             }
         }
     }
