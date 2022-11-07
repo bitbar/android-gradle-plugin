@@ -25,7 +25,7 @@ dependencies {
 
     implementation 'com.android.tools.build:builder-test-api:7.2.1'
     implementation 'com.android.tools:annotations:30.2.1'
-    implementation 'com.testdroid:testdroid-api:3.1'
+    implementation 'com.testdroid:testdroid-api:3.7'
     implementation 'com.google.guava:guava:31.1-jre'
     testImplementation 'org.junit.jupiter:junit-jupiter-api:5.8.2'
     testImplementation 'org.junit.jupiter:junit-jupiter-engine:5.8.2'
@@ -47,7 +47,6 @@ dependencies {
     testImplementation 'org.jdom:jdom2:2.0.6.1'
     testImplementation 'xerces:xercesImpl:2.12.2'
     testImplementation 'com.google.crypto.tink:tink:1.6.1'
-    testImplementation 'com.fasterxml.jackson.core:jackson-databind:2.13.4.2'
 
     // force newer versions due to security issues in gradle-core:3.1.4:
     testImplementation 'org.jetbrains.kotlin:kotlin-stdlib:1.7.0'
@@ -79,8 +78,8 @@ javadoc {
 }
 
 java {
-    sourceCompatibility = JavaVersion.VERSION_1_8
-    targetCompatibility = JavaVersion.VERSION_1_8
+    sourceCompatibility = JavaVersion.VERSION_11
+    targetCompatibility = JavaVersion.VERSION_11
 }
 
 task javadocJar(type: Jar, dependsOn: javadoc) {
