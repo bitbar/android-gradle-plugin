@@ -83,7 +83,7 @@ public class TestDroidServer extends TestServer {
         try {
             user = client.me();
         } catch (APIException e) {
-            throw new InvalidUserDataException("TESTDROID: Client couldn't connect", e);
+            throw new InvalidUserDataException("TESTDROID: Client couldn't connect: " + e.getMessage(), e);
         }
         try {
             final Context<APIDeviceGroup> context = new Context<>(APIDeviceGroup.class, 0, MAX_VALUE, EMPTY, EMPTY);
