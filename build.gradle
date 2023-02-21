@@ -152,6 +152,6 @@ publishing {
 }
 
 signing {
-    required { gradle.taskGraph.hasTask("uploadArchives") }
+    required { gradle.taskGraph.hasTask(":publishMavenJavaPublicationToMavenRepository") }
     sign publishing.publications.mavenJava
 }
