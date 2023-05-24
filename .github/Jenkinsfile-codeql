@@ -1,0 +1,74 @@
+#!/usr/bin/env groovy
+
+codeqlUrl = "https://github.com/github/codeql-action/releases/latest/download/codeql-bundle-linux64.tar.gz"
+outputFile = "results.serif"
+databaseName = "java-db"
+scmTargetPath = "android-gradle-plugin"
+repo = "git@github.com:bitbar/android-gradle-plugin.git"
+credentialsId = "bitbar-dev-ssh"
+githubApiCredentialsId = "4235c5e0-e60b-4c7d-8816-9508e60f484d"
+branch = "master"
+language = "java"
+
+properties(
+        [
+                buildDiscarder(logRotator(artifactDaysToKeepStr: '', artifactNumToKeepStr: '', daysToKeepStr: '50', numToKeepStr: '50')),
+                disableConcurrentBuilds(),
+                pipelineTriggers([pollSCM("@weekly")]),
+        ]
+)
+
+node('linux && docker') {
+    try {
+        stage("Repo preparations") {
+            def scmVars = checkout([
+                    $class           : 'GitSCM',
+                    branches         : [[name: branch]], doGenerateSubmoduleConfigurations: false,
+                    extensions       : [[$class: 'RelativeTargetDirectory', relativeTargetDir: scmTargetPath]],
+                    userRemoteConfigs: [[credentialsId: credentialsId, url: repo]]
+            ])
+            env.GIT_REPO_NAME = scmVars.GIT_URL.replaceFirst(/^.*:(.*)\.git$/, '$1')
+        }
+
+        stage('Init codeQL') {
+            init()
+        }
+
+        stage('CodeQL analyze') {
+            analyze()
+        }
+
+        stage('CodeQL results publishing') {
+            publish()
+        }
+
+    } finally {
+        stage('notification') {
+            notification()
+            cleanWs()
+        }
+    }
+}
+
+def init() {
+    sh("curl -sSL ${codeqlUrl} -o code-ql.tar.gz")
+    sh("tar -xvzf ./code-ql.tar.gz")
+}
+
+def analyze() {
+    sh("${WORKSPACE}/codeql/codeql database create ${databaseName} --language=${language} --source-root=${scmTargetPath} --command=\"./gradlew clean build\"")
+    sh("${WORKSPACE}/codeql/codeql database analyze ${databaseName} --format=sarif-latest --output=${outputFile}")
+}
+
+def publish() {
+    withCredentials([string(credentialsId: githubApiCredentialsId, variable: 'GITHUB_TOKEN')]) {
+        sh("${WORKSPACE}/codeql/codeql github upload-results --repository=${env.GIT_REPO_NAME} --ref=refs/heads/${branch} --checkout-path=${WORKSPACE}/${scmTargetPath} --sarif=${outputFile}")
+    }
+}
+
+def notification() {
+    def text = "Scan <${env.BUILD_URL}|${env.JOB_NAME}[${env.BUILD_NUMBER}]>\n Finished with result ${currentBuild.currentResult}"
+    colorCode = currentBuild.currentResult == 'SUCCESS' ? '#00FF00' : '#FF0000'
+    slackSend color: colorCode, teamDomain: 'smartbear', channel: "bitbar-backend", message: text, tokenCredentialId:
+            'SLACK_BACKEND_INTEGRATION_TOKEN'
+}
