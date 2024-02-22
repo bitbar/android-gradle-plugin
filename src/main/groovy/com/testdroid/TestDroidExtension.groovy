@@ -22,16 +22,13 @@ import org.gradle.util.ConfigureUtil
 
 class TestDroidExtension {
     Project project
-    String username
-    String password
     String apiKey
     String projectName
     String cloudUrl
-    Mode mode = Mode.FULL_RUN
     String deviceGroup
     String deviceLanguageCode
     String hookUrl
-    String scheduler // PARALLEL or SERIAL
+    String scheduler // PARALLEL, SERIAL, SINGLE
     String testScreenshotDir
     String testRunName
     String testRunId
@@ -41,26 +38,16 @@ class TestDroidExtension {
     Long virusScanTimeout
 
     Boolean useSystemProxySettings = Boolean.FALSE
-    Authorization authorization = Authorization.OAUTH2
+    Authorization authorization = Authorization.APIKEY
 
     FullRunConfig fullRunConfig = new FullRunConfig()
-    AppCrawlerConfig appCrawlerConfig = new AppCrawlerConfig()
 
     TestDroidExtension(Project project) {
         this.project = project
     }
 
-    def appCrawlerConfig(Closure configureClosure) {
-        ConfigureUtil.configure(configureClosure, this.appCrawlerConfig)
-    }
-
     def fullRunConfig(Closure configureClosure) {
         ConfigureUtil.configure(configureClosure, this.fullRunConfig)
-    }
-
-    class AppCrawlerConfig {
-        String applicationUserName
-        String applicationPassword
     }
 
     class FullRunConfig {
@@ -70,17 +57,10 @@ class TestDroidExtension {
         String limitationType
         String limitationValue
         String instrumentationAPKPath
-
     }
 
     enum Authorization {
-        APIKEY,
-        OAUTH2
-    }
-
-    enum Mode {
-        APP_CRAWLER,
-        FULL_RUN
+        APIKEY
     }
 
 }

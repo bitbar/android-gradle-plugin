@@ -1,10 +1,11 @@
 plugins {
     id 'com.android.application'
-    id 'testdroid' version '3.2' apply true
+    id 'testdroid' version '3.26' apply true
 }
 
 android {
     compileSdk 32
+    namespace 'com.example.myapplication'
 
     defaultConfig {
         applicationId "com.example.myapplication"
@@ -23,8 +24,8 @@ android {
         }
     }
     compileOptions {
-        sourceCompatibility JavaVersion.VERSION_11
-        targetCompatibility JavaVersion.VERSION_11
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
     }
 }
 
@@ -38,12 +39,18 @@ dependencies {
 }
 
 testdroid {
-    username  "demo@localhost"
-    password "password"
+    apiKey "YOUR_API_KEY"
     cloudUrl = 'https://cloud.bitbar.com'
     projectName "Project 1"
-    mode "FULL_RUN"
     scheduler "SINGLE"
     frameworkId 252
     deviceGroup 'My devices'
 }
+
+//testdroid {
+//    apiKey "YOUR_API_KEY"
+//    cloudUrl = 'https://staging.bitbar.com'
+//    scheduler "SINGLE"
+//    frameworkId 348
+//    deviceGroup 'My devices'
+//}

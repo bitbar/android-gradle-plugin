@@ -22,23 +22,22 @@ import com.android.builder.testing.api.TestServer;
 import com.testdroid.api.APIClient;
 import com.testdroid.api.APIException;
 import com.testdroid.api.APIKeyClient;
-import com.testdroid.api.DefaultAPIClient;
 import com.testdroid.api.dto.Context;
 import com.testdroid.api.filter.FilterEntry;
 import com.testdroid.api.model.*;
 import org.apache.commons.collections4.multimap.HashSetValuedHashMap;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.http.HttpHost;
 import org.gradle.api.InvalidUserDataException;
 import org.gradle.api.logging.Logger;
 
 import java.io.File;
+import java.net.InetSocketAddress;
+import java.net.Proxy;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
 import static com.testdroid.TestDroidExtension.Authorization.APIKEY;
-import static com.testdroid.TestDroidExtension.Authorization.OAUTH2;
 import static com.testdroid.api.dto.MappingKey.*;
 import static com.testdroid.api.dto.Operand.EQ;
 import static com.testdroid.api.model.APIFileConfig.Action.INSTALL;
@@ -155,25 +154,17 @@ public class TestDroidServer extends TestServer {
             case APIKEY:
                 return new APIKeyClient(testdroidCloudURL, extension.getApiKey());
             case APIKEY_PROXY:
-                return new APIKeyClient(testdroidCloudURL, extension.getApiKey(), buildProxyHost(), false);
+                return new APIKeyClient(testdroidCloudURL, extension.getApiKey(), buildProxy(), false);
             case APIKEY_PROXY_CREDENTIALS:
                 return new APIKeyClient(testdroidCloudURL, extension
-                        .getApiKey(), buildProxyHost(), proxyUser, proxyPassword, false);
-            case OAUTH:
-                return new DefaultAPIClient(testdroidCloudURL, extension.getUsername(), extension.getPassword());
-            case OAUTH_PROXY:
-                return new DefaultAPIClient(testdroidCloudURL, extension.getUsername(), extension
-                        .getPassword(), buildProxyHost(), false);
-            case OAUTH_PROXY_CREDENTIALS:
-                return new DefaultAPIClient(testdroidCloudURL, extension.getUsername(), extension
-                        .getPassword(), buildProxyHost(), proxyUser, proxyPassword, false);
+                        .getApiKey(), buildProxy(), proxyUser, proxyPassword, false);
             case UNSUPPORTED:
             default:
                 return null;
         }
     }
 
-    private HttpHost buildProxyHost() {
+    private Proxy buildProxy() {
         String proxyHost = System.getProperty("http.proxyHost");
         String proxyPort = System.getProperty("http.proxyPort");
         int port = -1;
@@ -182,7 +173,7 @@ public class TestDroidServer extends TestServer {
         } catch (NumberFormatException nfe) {
             //ignore and use default
         }
-        return new HttpHost(proxyHost, port);
+        return new Proxy(Proxy.Type.HTTP, new InetSocketAddress(proxyHost, port));
     }
 
     private List<APIFileConfig> uploadBinaries(APIUser user, File testApk, File testedApk, Long virusScanTimeout)
@@ -193,7 +184,7 @@ public class TestDroidServer extends TestServer {
             fileConfigs.add(uploadFile(user, testedApk, files, INSTALL));
             logger.info("TESTDROID: Android application uploaded");
         }
-        if (extension.getMode() == TestDroidExtension.Mode.FULL_RUN && testApk != null && testApk.exists()) {
+        if (testApk != null && testApk.exists()) {
             fileConfigs.add(uploadFile(user, testApk, files, RUN_TEST));
             logger.info("TESTDROID: Android test uploaded");
         }
@@ -230,10 +221,6 @@ public class TestDroidServer extends TestServer {
         }
         config.setOsType(ANDROID);
 
-        //App crawler settings
-        config.setApplicationUsername(extension.getAppCrawlerConfig().getApplicationUserName());
-        config.setApplicationPassword(extension.getAppCrawlerConfig().getApplicationPassword());
-
         //Full run settings
         if (extension.getFullRunConfig().getLimitationType() != null) {
             config.setLimitationType(APITestRunConfig.LimitationType
@@ -245,7 +232,7 @@ public class TestDroidServer extends TestServer {
         config.setWithoutAnnotation(extension.getFullRunConfig().getWithOutAnnotation());
         config.setScreenshotDir(extension.getTestScreenshotDir());
         config.setInstrumentationRunner(extension.getFullRunConfig().getInstrumentationRunner());
-        config.setUsedDeviceGroupId(deviceGroupId);
+        config.setDeviceGroupId(deviceGroupId);
         //Reset as in Gradle Plugin we use only deviceGroups
         config.setDeviceIds(null);
         Optional.ofNullable(extension.getTimeout()).ifPresent(config::setTimeout);
@@ -264,14 +251,6 @@ public class TestDroidServer extends TestServer {
 
     @Override
     public boolean isConfigured() {
-        if (extension.getAuthorization() == OAUTH2 && extension.getUsername() == null) {
-            logger.warn("TESTDROID: username has not been set");
-            return false;
-        }
-        if (extension.getAuthorization() == OAUTH2 && extension.getPassword() == null) {
-            logger.warn("TESTDROID: password has not been set");
-            return false;
-        }
         if (extension.getAuthorization() == APIKEY && extension.getApiKey() == null) {
             logger.warn("TESTDROID: apiKey has not been set");
             return false;
