@@ -59,6 +59,7 @@ gradlePlugin {
 
         }
     }
+    automatedPublishing = false
 }
 
 // custom tasks for creating source/javadoc jars
