@@ -1,10 +1,10 @@
-Gradle plugin to deploys apks to Testdroid's online devices
+Gradle plugin to deploys apks to BitBar cloud and launches test run.
 
 A typical project build.gradle will look like this:
 
     plugins {
         id 'com.android.application'
-        id 'testdroid' version '3.0' apply true
+        id 'testdroid' version '3.26' apply true
     }
 
     android {
@@ -27,8 +27,8 @@ A typical project build.gradle will look like this:
             }
         }
         compileOptions {
-            sourceCompatibility JavaVersion.VERSION_11
-            targetCompatibility JavaVersion.VERSION_11
+            sourceCompatibility JavaVersion.VERSION_17
+            targetCompatibility JavaVersion.VERSION_17
         }
     }
     
@@ -42,11 +42,9 @@ A typical project build.gradle will look like this:
     }
     
     testdroid {
-        username  "demo@localhost"
-        password "password"
+        apiKey  "YOUR_API_KEY"
         cloudUrl = 'https://cloud.bitbar.com'
         projectName "Project 1"
-        mode "FULL_RUN"
         scheduler "SINGLE"
         frameworkId 252
         deviceGroup 'My devices'
@@ -65,18 +63,13 @@ You can fully control your testrun using the same configurations options which a
 Below is listed all the supported configurations parameters:
 
     testdroid {
-        username  "demo@localhost" //required by default or authorization "OAUTH2"
-        password "password" //required by default or authorization "OAUTH2"
 
-        authorization "OAUTH2" //optional "APIKEY"|"OAUTH2"(default)
-
-        apiKey "d409cad93079b6c6cd55b79e927b17i5" //required if authorization "APIKEY"
+        apiKey "YOUR_API_KEY"
 
         deviceGroup "test group"
 
         cloudUrl = 'https://cloud.bitbar.com'  //optional - default live
         projectName "Project 1"  //optional - default: create a new project
-        mode "FULL_RUN" //FULL_RUN / APP_CRAWLER
         frameworkId // customer test framework id
         testRunName "Custom test run name" //optional - default: build variant name
 
@@ -84,7 +77,7 @@ Below is listed all the supported configurations parameters:
     
         hookUrl "http://localhost:9080"   //optional - call back URL after test run has finished default: empty
     
-        scheduler "PARALLEL" // optional - PARALLEL or SERIAL default: PARALLEL
+        scheduler "PARALLEL" // optional - PARALLEL, SERIAL, SINGLE, default: PARALLEL
     
         testScreenshotDir = "/sdcard/abc"  //optional - custom screenshot folder  default: /sdcard/test-screenshots
     
@@ -94,12 +87,6 @@ Below is listed all the supported configurations parameters:
         
         virusScanTimeout 300000 // optional - timeout for waiting on virus scan (in ms)
         
-        // AppCrawler configuration - set application credentials
-        appCrawlerConfig{
-            applicationPassword = "appPassword2"
-            applicationUserName = "appUsername2"
-        }
-    
         // optional - Custom settings for test execution
         fullRunConfig {
             instrumentationRunner =  "com.android.testRunner" //use android.support.test.runner.AndroidJUnitRunner for Espresso2 tests

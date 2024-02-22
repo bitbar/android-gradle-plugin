@@ -23,34 +23,31 @@ dependencies {
     gradleApi gradleApi()
     groovy localGroovy()
 
-    implementation 'com.android.tools.build:builder-test-api:7.2.1'
-    implementation 'com.android.tools:annotations:30.2.1'
-    implementation 'com.testdroid:testdroid-api:3.13'
+    implementation 'com.android.tools.build:builder-test-api:8.2.2'
+    implementation 'com.android.tools:annotations:31.2.2'
+    implementation 'com.testdroid:testdroid-api:3.26'
     implementation 'com.google.guava:guava:31.1-jre'
-    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.8.2'
-    testImplementation 'org.junit.jupiter:junit-jupiter-engine:5.8.2'
-    testImplementation 'org.junit.jupiter:junit-jupiter-params:5.8.2'
-    testImplementation 'com.android.tools.build:gradle:7.2.1'
+    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.10.1'
+    testImplementation 'org.junit.jupiter:junit-jupiter-engine:5.10.1'
+    testImplementation 'org.junit.jupiter:junit-jupiter-params:5.10.1'
+    testImplementation 'com.android.tools.build:gradle:8.2.2'
     testImplementation 'com.android.tools.build:gradle-core:3.1.4'
 
-    // force newer versions due to security issues in builder-test-api:7.2.1
     implementation 'com.google.protobuf:protobuf-java:3.21.8'
 
-    // force newer versions due to security issues in gradle:7.2.1:
-    testImplementation 'org.bouncycastle:bcprov-jdk15on:1.70'
     testImplementation 'io.netty:netty-codec-http:4.1.106.Final'
     testImplementation 'io.netty:netty-codec-http2:4.1.106.Final'
     testImplementation 'com.google.code.gson:gson:2.9.0'
     testImplementation 'commons-io:commons-io:2.11.0'
     testImplementation 'org.apache.commons:commons-compress:1.21'
-    testImplementation 'org.jsoup:jsoup:1.15.3'
+    testImplementation 'org.jsoup:jsoup:1.17.2'
     testImplementation 'org.jdom:jdom2:2.0.6.1'
     testImplementation 'xerces:xercesImpl:2.12.2'
     testImplementation 'com.google.crypto.tink:tink:1.6.1'
 
     // force newer versions due to security issues in gradle-core:3.1.4:
-    testImplementation 'org.jetbrains.kotlin:kotlin-stdlib:1.7.0'
-    testImplementation 'org.jetbrains.kotlin:kotlin-reflect:1.7.0'
+    testImplementation 'org.jetbrains.kotlin:kotlin-stdlib:1.9.22'
+    testImplementation 'org.jetbrains.kotlin:kotlin-reflect:1.9.22'
     testImplementation 'commons-codec:commons-codec:1.15'
 }
 
@@ -83,7 +80,7 @@ java {
 }
 
 task javadocJar(type: Jar, dependsOn: javadoc) {
-    classifier 'javadoc'
+    archiveClassifier = 'javadoc'
     from javadoc.destinationDir
 }
 
