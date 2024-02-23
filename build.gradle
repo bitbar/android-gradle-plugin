@@ -38,7 +38,7 @@ dependencies {
     testImplementation 'io.netty:netty-codec-http:4.1.106.Final'
     testImplementation 'io.netty:netty-codec-http2:4.1.106.Final'
     testImplementation 'com.google.code.gson:gson:2.9.0'
-    testImplementation 'commons-io:commons-io:2.11.0'
+    testImplementation 'commons-io:commons-io:2.15.1'
     testImplementation 'org.apache.commons:commons-compress:1.21'
     testImplementation 'org.jsoup:jsoup:1.17.2'
     testImplementation 'org.jdom:jdom2:2.0.6.1'
