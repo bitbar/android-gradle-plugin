@@ -33,7 +33,7 @@ dependencies {
     testImplementation 'com.android.tools.build:gradle:8.2.2'
     testImplementation 'com.android.tools.build:gradle-core:3.1.4'
 
-    implementation 'com.google.protobuf:protobuf-java:3.21.8'
+    implementation 'com.google.protobuf:protobuf-java:3.25.3'
 
     testImplementation 'io.netty:netty-codec-http:4.1.106.Final'
     testImplementation 'io.netty:netty-codec-http2:4.1.106.Final'
