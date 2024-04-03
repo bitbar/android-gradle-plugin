@@ -43,7 +43,7 @@ dependencies {
     testImplementation 'org.jsoup:jsoup:1.17.2'
     testImplementation 'org.jdom:jdom2:2.0.6.1'
     testImplementation 'xerces:xercesImpl:2.12.2'
-    testImplementation 'com.google.crypto.tink:tink:1.6.1'
+    testImplementation 'com.google.crypto.tink:tink:1.13.0'
 
     // force newer versions due to security issues in gradle-core:3.1.4:
     testImplementation 'org.jetbrains.kotlin:kotlin-stdlib:1.9.22'
