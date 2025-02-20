@@ -1,19 +1,29 @@
 Gradle plugin to deploys apks to BitBar cloud and launches test run.
 
+## Developing and building gradle plugin locally
+
+To build and publish gradle plugin locally run
+
+```bash
+./gradlew clean build publishToMavenLocal -PenableAutoPublish
+```
+
+## Running gradle plugin
+
 A typical project build.gradle will look like this:
 
     plugins {
         id 'com.android.application'
-        id 'testdroid' version '3.26' apply true
+        id 'testdroid' version '3.38' apply true
     }
 
     android {
-        compileSdk 32
+        compileSdk 34
 
         defaultConfig {
             applicationId "com.example.myapplication"
             minSdk 21
-            targetSdk 32
+            targetSdk 34
             versionCode 1
             versionName "1.0"
 
@@ -33,12 +43,13 @@ A typical project build.gradle will look like this:
     }
     
     dependencies {
-        implementation 'androidx.appcompat:appcompat:1.3.0'
-        implementation 'com.google.android.material:material:1.4.0'
-        implementation 'androidx.constraintlayout:constraintlayout:2.0.4'
-        testImplementation 'junit:junit:4.13.2'
-        androidTestImplementation 'androidx.test.ext:junit:1.1.3'
-        androidTestImplementation 'androidx.test.espresso:espresso-core:3.4.0'
+        implementation 'androidx.appcompat:appcompat:1.7.0'
+        implementation 'com.google.android.material:material:1.12.0'
+        implementation 'androidx.constraintlayout:constraintlayout:2.2.0'
+        testImplementation 'org.junit.jupiter:junit-jupiter:5.11.4'
+        testImplementation 'junit:junit:4.12'
+        androidTestImplementation 'androidx.test.ext:junit:1.2.1'
+        androidTestImplementation 'androidx.test.espresso:espresso-core:3.6.1'
     }
     
     testdroid {
@@ -50,13 +61,14 @@ A typical project build.gradle will look like this:
         deviceGroup 'My devices'
     }
 
-
-
-With above configuration your application and instrumentation package 
+With above configuration your application and instrumentation package
 are uploaded into BitBar Cloud and test run is launched using device from group 'My Devices'
 
-To launch test run from command line use testdroidUpload task:
->./gradlew testdroidUpload
+To launch test run from command line use task:
+
+```bash
+./gradlew testdroidUpload
+```
 
 You can fully control your testrun using the same configurations options which are available via BitBar Cloud web UI.
 

@@ -2,7 +2,7 @@ package com.example.myapplication;
 
 import org.junit.Test;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * Example local unit test, which will execute on the development machine (host).
