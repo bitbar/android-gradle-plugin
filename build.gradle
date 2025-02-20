@@ -4,9 +4,12 @@ apply plugin: 'maven-publish'
 apply plugin: 'signing'
 apply plugin: 'java-gradle-plugin'
 
-project.group = GROUP_ID
-project.archivesBaseName = ARTIFACT_ID
-project.version = VERSION_NAME
+group = GROUP_ID
+version = VERSION_NAME
+
+base {
+    archivesName = ARTIFACT_ID
+}
 
 repositories {
     mavenCentral()
@@ -23,47 +26,47 @@ dependencies {
     gradleApi gradleApi()
     groovy localGroovy()
 
-    implementation 'com.android.tools.build:builder-test-api:8.2.2'
-    implementation 'com.android.tools:annotations:31.2.2'
-    implementation 'com.testdroid:testdroid-api:3.26'
-    implementation 'com.google.guava:guava:31.1-jre'
-    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.10.2'
-    testImplementation 'org.junit.jupiter:junit-jupiter-engine:5.10.2'
-    testImplementation 'org.junit.jupiter:junit-jupiter-params:5.10.2'
-    testImplementation 'com.android.tools.build:gradle:8.2.2'
-    testImplementation 'com.android.tools.build:gradle-core:3.1.4'
+    implementation 'com.android.tools.build:builder-test-api:8.8.1'
+    implementation 'com.android.tools:annotations:31.8.1'
+    implementation 'com.testdroid:testdroid-api:3.38.0'
+    implementation 'com.google.guava:guava:33.4.0-jre'
+    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.11.4'
+    testImplementation 'org.junit.jupiter:junit-jupiter-engine:5.11.4'
+    testImplementation 'org.junit.jupiter:junit-jupiter-params:5.11.4'
+    testImplementation 'com.android.tools.build:gradle:8.8.1'
 
-    implementation 'com.google.protobuf:protobuf-java:3.21.8'
+    implementation 'com.google.protobuf:protobuf-java:4.29.3'
 
-    testImplementation 'io.netty:netty-codec-http:4.1.106.Final'
-    testImplementation 'io.netty:netty-codec-http2:4.1.106.Final'
-    testImplementation 'com.google.code.gson:gson:2.9.0'
-    testImplementation 'commons-io:commons-io:2.11.0'
-    testImplementation 'org.apache.commons:commons-compress:1.21'
-    testImplementation 'org.jsoup:jsoup:1.17.2'
+    testImplementation 'io.netty:netty-codec-http:4.1.118.Final'
+    testImplementation 'io.netty:netty-codec-http2:4.1.118.Final'
+    testImplementation 'com.google.code.gson:gson:2.12.1'
+    testImplementation 'commons-io:commons-io:2.18.0'
+    testImplementation 'org.apache.commons:commons-compress:1.27.1'
+    testImplementation 'org.jsoup:jsoup:1.18.3'
     testImplementation 'org.jdom:jdom2:2.0.6.1'
     testImplementation 'xerces:xercesImpl:2.12.2'
-    testImplementation 'com.google.crypto.tink:tink:1.6.1'
-
-    // force newer versions due to security issues in gradle-core:3.1.4:
-    testImplementation 'org.jetbrains.kotlin:kotlin-stdlib:1.9.22'
-    testImplementation 'org.jetbrains.kotlin:kotlin-reflect:1.9.22'
-    testImplementation 'commons-codec:commons-codec:1.16.1'
+    testImplementation 'com.google.crypto.tink:tink:1.16.0'
 }
 
 gradlePlugin {
+    website = 'https://github.com/bitbar/android-gradle-plugin'
+    vcsUrl = 'https://github.com/bitbar/android-gradle-plugin.git'
     plugins {
         testdroid {
+            displayName = 'Testdroid Gradle Plugin'
+            description = 'Gradle plugin to deploys apks to BitBar cloud and launches test run'
+            tags.set(['android', 'bitbar', 'testdroid', 'cloud', 'testing'])
             id = 'testdroid'
             implementationClass = 'com.testdroid.TestDroidPlugin'
 
         }
     }
-    automatedPublishing = false
+    automatedPublishing = project.hasProperty("enableAutoPublish")
 }
 
 // custom tasks for creating source/javadoc jars
-task sourcesJar(type: Jar, dependsOn: classes) {
+tasks.register('sourcesJar', Jar) {
+    dependsOn classes
     archiveClassifier.set('sources')
     from sourceSets.main.allSource
 }
@@ -76,11 +79,12 @@ javadoc {
 }
 
 java {
-    sourceCompatibility = JavaVersion.VERSION_11
-    targetCompatibility = JavaVersion.VERSION_11
+    sourceCompatibility = JavaVersion.VERSION_17
+    targetCompatibility = JavaVersion.VERSION_17
 }
 
-task javadocJar(type: Jar, dependsOn: javadoc) {
+tasks.register('javadocJar', Jar) {
+    dependsOn javadoc
     archiveClassifier = 'javadoc'
     from javadoc.destinationDir
 }
@@ -121,7 +125,7 @@ publishing {
                     license {
                         name = POM_LICENSE_NAME
                         url = POM_LICENSE_URL
-                        distribution = POM_LICENSE_DSITRIBUTIION
+                        distribution = POM_LICENSE_DISTRIBUTION
                     }
                 }
 
@@ -129,11 +133,6 @@ publishing {
                     developer {
                         name = 'Sakari Rautiainen'
                     }
-                }
-                scm {
-                    url = POM_SCM_URL
-                    connection = POM_SCM_CONNECTION
-                    developerConnection = POM_SCM_DEVELOPER_CONNECTION
                 }
             }
         }
