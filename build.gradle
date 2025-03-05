@@ -33,7 +33,7 @@ dependencies {
     testImplementation 'org.junit.jupiter:junit-jupiter-api:5.11.4'
     testImplementation 'org.junit.jupiter:junit-jupiter-engine:5.11.4'
     testImplementation 'org.junit.jupiter:junit-jupiter-params:5.11.4'
-    testImplementation 'com.android.tools.build:gradle:8.8.1'
+    testImplementation 'com.android.tools.build:gradle:8.9.0'
 
     implementation 'com.google.protobuf:protobuf-java:4.29.3'
 
