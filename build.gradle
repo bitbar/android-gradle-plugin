@@ -45,7 +45,7 @@ dependencies {
     testImplementation 'org.jsoup:jsoup:1.18.3'
     testImplementation 'org.jdom:jdom2:2.0.6.1'
     testImplementation 'xerces:xercesImpl:2.12.2'
-    testImplementation 'com.google.crypto.tink:tink:1.16.0'
+    testImplementation 'com.google.crypto.tink:tink:1.17.0'
 }
 
 gradlePlugin {
