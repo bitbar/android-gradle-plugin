@@ -56,8 +56,10 @@ def init() {
 }
 
 def analyze() {
-    sh("${WORKSPACE}/codeql/codeql database create ${databaseName} --language=${language} --source-root=${scmTargetPath} --command=\"./gradlew clean build\"")
-    sh("${WORKSPACE}/codeql/codeql database analyze ${databaseName} --format=sarif-latest --output=${outputFile}")
+    docker.image("eclipse-temurin:17-jdk-noble").inside("-u 0:0") {
+        sh("${WORKSPACE}/codeql/codeql database create ${databaseName} --language=${language} --source-root=${scmTargetPath} --command=\"./gradlew clean build\"")
+        sh("${WORKSPACE}/codeql/codeql database analyze ${databaseName} --format=sarif-latest --output=${outputFile}")
+    }
 }
 
 def publish() {
